@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Immersive View</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#6B8E23", 
+              "background-light": "#FAFAF9", 
+              "background-dark": "#1C1C1E",
+              "text-primary-light": "#262626",
+              "text-primary-dark": "#F5F5F5",
+              "text-secondary-light": "#525252",
+              "text-secondary-dark": "#A3A3A3",
+            },
+            fontFamily: {
+              display: ["Playfair Display", "serif"],
+              body: ["Inter", "sans-serif"],
+            },
+            boxShadow: {
+                'glow': '0 0 20px rgba(107, 142, 35, 0.3)',
+                'lens': '0 0 0 2px rgba(255,255,255,0.8), 0 10px 40px rgba(0,0,0,0.5)', 
+            },
+            cursor: {
+                'crosshair': 'crosshair',
+            }
+          },
+        },
+      };
+    </script>
+    <style>
+        #magnifying-glass {
+            display: none; 
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none; 
+            z-index: 50;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            transform: translate3d(0,0,0); 
+            will-change: transform;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5), 
+                        0 10px 40px rgba(0, 0, 0, 0.5),
+                        inset 0 0 20px rgba(0,0,0,0.2);
+        }
+        
+        img {
+            -webkit-user-drag: none;
+            user-select: none;
+        }
+        
+        body {
+            overscroll-behavior-y: none;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-body antialiased transition-colors duration-300 selection:bg-primary/30">
+
+    <nav class="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-30 pointer-events-none">
+        <a href="index.html" class="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white pointer-events-auto transition-transform hover:scale-105 active:scale-95">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+        <div class="flex gap-3 pointer-events-auto">
+            <button class="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white transition-transform hover:scale-105 active:scale-95">
+                <span class="material-symbols-outlined">ios_share</span>
+            </button>
+            <button class="w-10 h-10 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white transition-transform hover:scale-105 active:scale-95">
+                <span class="material-symbols-outlined">favorite_border</span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="min-h-screen lg:grid lg:grid-cols-2">
+        
+        <div class="relative h-[60vh] lg:h-screen w-full bg-gray-900 cursor-crosshair touch-none lg:sticky lg:top-0" id="hero-container">
+            <img 
+                id="main-image"
+                alt="Beadwork Detail" 
+                class="w-full h-full object-cover object-center" 
+                src="" 
+            />
+
+            <div id="magnifying-glass"></div>
+
+            <div id="hint-overlay" class="absolute bottom-10 left-0 right-0 text-center pointer-events-none transition-opacity duration-500">
+                <span class="bg-black/40 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-medium uppercase tracking-widest border border-white/20">
+                    <span class="lg:hidden">Tap & Hold to Inspect</span>
+                    <span class="hidden lg:inline">Hover to Inspect</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="relative z-10 px-6 lg:px-16 py-8 lg:py-0 bg-background-light dark:bg-background-dark rounded-t-3xl lg:rounded-none -mt-6 lg:mt-0 lg:flex lg:flex-col lg:justify-center">
+            
+            <div class="flex flex-col items-center text-center lg:items-start lg:text-left mb-8">
+                <span id="craft-type" class="text-xs font-bold tracking-[0.2em] uppercase text-primary mb-4 block">Gallery Piece</span>
+                <h1 id="craft-title" class="font-display text-4xl lg:text-5xl text-text-primary-light dark:text-text-primary-dark font-medium leading-tight mb-4">
+                    Loading...
+                </h1>
+                <p class="text-text-secondary-light dark:text-text-secondary-dark text-sm italic">Design by Elara Studio</p>
+            </div>
+
+            <div class="space-y-8 mb-12">
+                <div>
+                    <h3 class="text-xs uppercase tracking-widest font-bold mb-3 text-text-primary-light dark:text-text-primary-dark">Curator's Note</h3>
+                    <p class="text-text-secondary-light dark:text-text-secondary-dark leading-relaxed font-light text-lg lg:text-xl text-justify lg:text-left">
+                        A unique handcrafted piece from our collection. Use the lens to appreciate the texture, light play, and precision of the beadwork.
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-6 py-6 border-t border-b border-gray-200 dark:border-gray-800">
+                    <div class="text-center lg:text-left">
+                        <p class="text-[10px] uppercase tracking-wider text-text-secondary-dark mb-2">Material</p>
+                        <p class="font-display text-lg font-medium">Mixed Glass</p>
+                    </div>
+                    <div class="text-center lg:text-left border-l lg:border-l-0 border-gray-200 dark:border-gray-800 lg:pl-0">
+                        <p class="text-[10px] uppercase tracking-wider text-text-secondary-dark mb-2">Origin</p>
+                        <p class="font-display text-lg font-medium">Studio</p>
+                    </div>
+                    <div class="text-center lg:text-left border-l lg:border-l-0 border-gray-200 dark:border-gray-800 lg:pl-0">
+                        <p class="text-[10px] uppercase tracking-wider text-text-secondary-dark mb-2">Status</p>
+                        <p class="font-display text-lg font-medium">Available</p>
+                    </div>
+                </div>
+            </div>
+
+            <button class="hidden lg:flex w-full bg-primary hover:opacity-90 text-white py-4 rounded-xl font-medium shadow-glow items-center justify-center gap-2 transform active:scale-[0.98] transition-all mb-6">
+                <span>Inquire to Collect</span>
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+             <p class="hidden lg:block text-center text-sm text-text-secondary-dark italic">Worldwide shipping available.</p>
+        </div>
+    </main>
+
+    <div class="fixed bottom-0 left-0 right-0 p-6 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-xl z-40 border-t border-gray-100 dark:border-gray-800 lg:hidden">
+        <button class="w-full bg-primary hover:opacity-90 text-white py-4 rounded-xl font-medium shadow-glow flex items-center justify-center gap-2 transform active:scale-[0.98] transition-all">
+            <span>Inquire to Collect</span>
+            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+        </button>
+    </div>
+
+<script>
+window.addEventListener('load', function() {
+    
+    // --- 1. DYNAMIC DATA LOADING FROM URL ---
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Fallback in case the page is opened directly without clicking a link
+    const fallbackImage = "https://lh3.googleusercontent.com/aida-public/AB6AXuAOZGPL2eK_Q7MR2GwHIvADDWaGUFnhAVBG8iJIOJRlTsEsm_rJE1LroryauYtl44iCZWhoFhzT6-hS5-D9sfr7XN33XllVJgZVceHbOHn9lPnfxuxaeZdNXbFWGrUugYynD3iepf5ufTPC1zl7PZKUcrkUEerIse08Xqrg11T2k6UNB4ekFFv_KTrek2-Ctf0kozUmovVlaaHI7VDBRFIrM_m6Hd4Nzj-Dpn6ypvyWxILIHv_iww_zR3eqA1FOJsQBXtXfGtkQs-w"; 
+    
+    const imgSrc = urlParams.get('src') || fallbackImage;
+    const craftTitle = urlParams.get('title') || 'Verdant Eye Chain';
+    const craftType = urlParams.get('type') || 'Gallery Piece';
+
+    // Inject the exact data into the DOM
+    const mainImage = document.getElementById('main-image');
+    mainImage.src = imgSrc;
+    mainImage.alt = craftTitle;
+    
+    document.getElementById('craft-title').textContent = craftTitle;
+    document.getElementById('craft-type').textContent = craftType;
+
+
+    // --- 2. MAGNIFIER SCRIPT ---
+    const container = document.getElementById('hero-container');
+    const lens = document.getElementById('magnifying-glass');
+    const hint = document.getElementById('hint-overlay');
+
+    const ZOOM = 2.5;
+    let isVisible = false;
+    let cursorX = 0;
+    let cursorY = 0;
+    let imgRect = null;
+    let lensWidth = 0;
+    let lensHeight = 0;
+
+    // Wait for the dynamically loaded image to finish before setting up the lens
+    function setupLensImage() {
+        lens.style.backgroundImage = `url('${mainImage.src}')`;
+        lens.style.backgroundRepeat = 'no-repeat';
+    }
+
+    if (mainImage.complete) {
+        setupLensImage();
+    } else {
+        mainImage.onload = setupLensImage;
+    }
+
+    function loop() {
+        if (!isVisible) return;
+        
+        imgRect = container.getBoundingClientRect();
+        const x = cursorX - imgRect.left;
+        const y = cursorY - imgRect.top;
+
+        // Hide lens if cursor goes out of bounds
+        if (x < 0 || x > imgRect.width || y < 0 || y > imgRect.height) {
+            hideLens();
+            requestAnimationFrame(loop);
+            return;
+        }
+
+        const lensX = x - (lensWidth / 2);
+        const lensY = y - (lensHeight / 2);
+        lens.style.transform = `translate3d(${lensX}px, ${lensY}px, 0)`;
+
+        const bgX = -((x * ZOOM) - (lensWidth / 2));
+        const bgY = -((y * ZOOM) - (lensHeight / 2));
+        lens.style.backgroundSize = `${imgRect.width * ZOOM}px ${imgRect.height * ZOOM}px`;
+        lens.style.backgroundPosition = `${bgX}px ${bgY}px`;
+
+        requestAnimationFrame(loop);
+    }
+
+    function showLens() {
+        if (!isVisible) {
+            isVisible = true;
+            lens.style.display = 'block';
+            if(hint) hint.style.opacity = '0';
+            lensWidth = lens.offsetWidth;
+            lensHeight = lens.offsetHeight;
+            requestAnimationFrame(loop);
+        }
+    }
+
+    function hideLens() {
+        isVisible = false;
+        lens.style.display = 'none';
+        if(hint) hint.style.opacity = '1';
+    }
+
+    function moveHandler(e) {
+        if (e.cancelable && isVisible) e.preventDefault();
+        if (e.touches && e.touches.length > 0) {
+            cursorX = e.touches[0].clientX;
+            cursorY = e.touches[0].clientY;
+        } else {
+            cursorX = e.clientX;
+            cursorY = e.clientY;
+        }
+    }
+
+    container.addEventListener('mouseenter', showLens);
+    container.addEventListener('mouseleave', hideLens);
+    container.addEventListener('mousemove', moveHandler);
+    container.addEventListener('touchstart', (e) => {
+        moveHandler(e);
+        showLens();
+    }, { passive: false });
+    container.addEventListener('touchmove', moveHandler, { passive: false });
+    container.addEventListener('touchend', hideLens);
+});
+</script>
+
+</body>
+</html>
