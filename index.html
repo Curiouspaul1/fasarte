@@ -45,6 +45,23 @@
             margin-bottom: 48px; 
         }
 
+        @keyframes spinIn {
+            0% { 
+                opacity: 0; 
+                transform: perspective(1000px) rotateY(-90deg) translateY(30px) scale(0.9); 
+            }
+            100% { 
+                opacity: 1; 
+                transform: perspective(1000px) rotateY(0deg) translateY(0) scale(1); 
+            }
+        }
+
+        .animate-spin-in {
+            /* Using a "springy" cubic-bezier makes the spin feel physical and snappy */
+            animation: spinIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards;
+            opacity: 0; /* Stay hidden until animation starts */
+        }
+
         .gallery-container:hover .masonry-item {
             opacity: 0.4;
             filter: grayscale(80%);
@@ -61,7 +78,7 @@
         .carousel-viewport {
             perspective: 2000px; /* INCREASED: Pulls the "camera" back for the wider radius */
             width: 100%;
-            height: 450px;
+            height: 350px;
             position: relative;
             display: flex;
             justify-content: center;
@@ -69,7 +86,7 @@
             overflow: hidden;
             touch-action: pan-y;
         }
-        @media (min-width: 768px) { .carousel-viewport { height: 550px; } }
+        @media (min-width: 768px) { .carousel-viewport { height: 440px; } }
 
         .carousel-scene {
             width: 100%;
@@ -135,15 +152,20 @@
 
 <body class="bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark font-body antialiased transition-colors duration-500 selection:bg-primary/30">
 
+    <div id="ambient-bg" class="fixed inset-0 -z-10 pointer-events-none transition-opacity duration-[1200ms] ease-out opacity-0 overflow-hidden" style="transform: translate3d(0,0,0);">
+        <div id="ambient-img" class="absolute inset-[-20%] bg-cover bg-center blur-[100px] saturate-[150%] opacity-80 dark:opacity-80 transition-all duration-700"></div>
+        <div class="absolute inset-0 bg-background-light/50 dark:bg-background-dark/70"></div>
+    </div>
+
     <header class="pt-16 pb-6 px-6 text-center">
-        <p class="text-xs font-bold tracking-[0.3em] uppercase text-text-secondary-light dark:text-text-secondary-dark mb-4">Est. 2024 • Handcrafted</p>
+        <p class="text-xs font-bold tracking-[0.3em] uppercase text-text-secondary-light dark:text-text-secondary-dark mb-4">Est. 2026 • Handcrafted</p>
         <h1 class="font-display text-5xl md:text-6xl font-medium italic mb-4">Orneril</h1>
         <p class="font-light text-sm max-w-xs mx-auto text-text-secondary-light dark:text-text-secondary-dark leading-relaxed">
             A digital exhibition of beadwork, exploring texture, light, and the patience of hand-crafting.
         </p>
     </header>
 
-    <section class="relative w-full py-10 overflow-hidden bg-background-light dark:bg-background-dark">
+    <section class="relative w-full py-4 overflow-hidden">
         <div class="carousel-viewport" id="carousel-viewport">
             <div class="carousel-scene" id="carousel-scene"></div>
         </div>
@@ -158,62 +180,18 @@
         </div>
     </section>
 
-    <nav class="sticky top-0 z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 mt-12 mb-12">
-        <div class="flex justify-center overflow-x-auto no-scrollbar py-4 space-x-8 px-6">
-            <button class="text-xs font-bold uppercase tracking-widest border-b border-primary text-primary pb-1">All Works</button>
-            <button class="text-xs font-bold uppercase tracking-widest text-text-secondary-dark hover:text-primary transition-colors pb-1">Chains</button>
-            <button class="text-xs font-bold uppercase tracking-widest text-text-secondary-dark hover:text-primary transition-colors pb-1">Bracelets</button>
-            <button class="text-xs font-bold uppercase tracking-widest text-text-secondary-dark hover:text-primary transition-colors pb-1">Archive</button>
+    <nav class="sticky top-0 z-40 mt-12 mb-12">
+        <div class="flex justify-center overflow-x-auto no-scrollbar py-4 space-x-8 px-6" id="filter-nav">
+            <button data-filter="all" class="filter-btn text-xs font-bold uppercase tracking-widest border-b border-primary text-primary pb-1 transition-colors">All Works</button>
+            <button data-filter="chain" class="filter-btn text-xs font-bold uppercase tracking-widest text-text-secondary-dark hover:text-primary transition-colors pb-1 border-b border-transparent">Chains</button>
+            <button data-filter="bracelet" class="filter-btn text-xs font-bold uppercase tracking-widest text-text-secondary-dark hover:text-primary transition-colors pb-1 border-b border-transparent">Bracelets</button>
+            <button data-filter="archive" class="filter-btn text-xs font-bold uppercase tracking-widest text-text-secondary-dark hover:text-primary transition-colors pb-1 border-b border-transparent">Archive</button>
         </div>
     </nav>
 
     <main class="px-6 pb-40 max-w-5xl mx-auto">
-        <div class="masonry-grid gallery-container">
-            <div class="masonry-item">
-                <a href="#" class="block group craft-link">
-                    <div class="relative overflow-hidden mb-4 rounded-xl">
-                        <img alt="Elegant beaded eyeglass chain" class="w-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700" src="https://images.unsplash.com/photo-1611085583191-a3b181a88401?q=80&w=800&auto=format&fit=crop"/>
-                    </div>
-                    <div class="text-center">
-                        <h3 class="font-display text-xl italic text-text-primary-light dark:text-text-primary-dark mb-1">Verdant Eye Chain</h3>
-                        <p class="text-[10px] uppercase tracking-widest text-text-secondary-dark">Chain • No. 04</p>
-                    </div>
-                </a>
+        <div class="masonry-grid gallery-container" id="masonry-gallery">
             </div>
-            <div class="masonry-item">
-                <a href="#" class="block group craft-link">
-                    <div class="relative overflow-hidden mb-4 rounded-xl">
-                        <img alt="Colorful bead bracelet stack" class="w-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700" src="https://images.unsplash.com/photo-1573408301185-9146fe634ad0?q=80&w=800&auto=format&fit=crop"/>
-                    </div>
-                    <div class="text-center">
-                        <h3 class="font-display text-xl italic text-text-primary-light dark:text-text-primary-dark mb-1">Boho Stack</h3>
-                        <p class="text-[10px] uppercase tracking-widest text-text-secondary-dark">Set • No. 08</p>
-                    </div>
-                </a>
-            </div>
-            <div class="masonry-item">
-                <a href="#" class="block group craft-link">
-                    <div class="relative overflow-hidden mb-4 rounded-xl">
-                        <img alt="Close up of yellow and green beadwork" class="w-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700" src="https://images.unsplash.com/photo-1602173574767-37ac01994b2a?q=80&w=800&auto=format&fit=crop"/>
-                    </div>
-                    <div class="text-center">
-                        <h3 class="font-display text-xl italic text-text-primary-light dark:text-text-primary-dark mb-1">Lemon Lime</h3>
-                        <p class="text-[10px] uppercase tracking-widest text-text-secondary-dark">Necklace • No. 12</p>
-                    </div>
-                </a>
-            </div>
-             <div class="masonry-item">
-                <a href="#" class="block group craft-link">
-                    <div class="relative overflow-hidden mb-4 rounded-xl">
-                        <img alt="Minimalist pearl necklace" class="w-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-700" src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800&auto=format&fit=crop"/>
-                    </div>
-                    <div class="text-center">
-                        <h3 class="font-display text-xl italic text-text-primary-light dark:text-text-primary-dark mb-1">Ocean Whisper</h3>
-                        <p class="text-[10px] uppercase tracking-widest text-text-secondary-dark">Pearl • No. 02</p>
-                    </div>
-                </a>
-            </div>
-        </div>
     </main>
 
     <footer class="fixed bottom-8 left-0 right-0 flex justify-center z-50 pointer-events-none">
@@ -238,21 +216,25 @@
         </div>
     </footer>
 
+    <script src="gallery_data.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             
             const carouselData = [
-                { title: 'Verdant Eye', type: 'Chain', img: 'https://images.unsplash.com/photo-1611085583191-a3b181a88401?q=80&w=800&auto=format&fit=crop' },
-                { title: 'Boho Stack', type: 'Set', img: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?q=80&w=800&auto=format&fit=crop' },
-                { title: 'Lemon Lime', type: 'Necklace', img: 'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?q=80&w=800&auto=format&fit=crop' },
-                { title: 'Ocean Whisper', type: 'Pearl', img: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800&auto=format&fit=crop' },
-                { title: 'Golden Hour', type: 'Layered', img: 'https://images.unsplash.com/photo-1588444650733-d0767b753fc8?q=80&w=800&auto=format&fit=crop' }
+                { title: 'Verdant Eye', type: 'Chain', img: 'orneril_images/img_39.jpeg' },
+                { title: 'Lemon Lime', type: 'Necklace', img: 'orneril_images/img_35.jpeg' },
+                { title: 'Ocean Whisper', type: 'Pearl', img: 'orneril_images/img_23.jpeg' },
+                { title: 'Golden Hour', type: 'Layered', img: 'orneril_images/img_19.jpeg' },
+                { title: 'Golden Hour', type: 'Layered', img: 'orneril_images/img_15.jpeg' }
             ];
 
             const scene = document.getElementById('carousel-scene');
             const totalCards = carouselData.length;
             let activeIndex = 0; 
             let cards = [];
+            let lastAmbientIndex = -1;
+            const ambientBg = document.getElementById('ambient-bg');
+            const ambientImg = document.getElementById('ambient-img');
 
             const theta = 360 / totalCards; 
             
@@ -313,6 +295,20 @@
                     if (absOffset === 0) {
                         card.classList.add('active');
                         card.style.opacity = 1;
+                        if (lastAmbientIndex !== i) {
+                            lastAmbientIndex = i;
+                            // Use a tiny timeout to move this task off the critical animation frame
+                            setTimeout(() => {
+                                const activeImgSrc = carouselData[i].img;
+                                const ambientImg = document.getElementById('ambient-img');
+                                const ambientBg = document.getElementById('ambient-bg');
+                                
+                                if (ambientImg && ambientBg) {
+                                    ambientImg.style.backgroundImage = `url('${activeImgSrc}')`;
+                                    ambientBg.style.opacity = '1';
+                                }
+                            }, 50); // 50ms delay is invisible to the eye but saves the CPU
+                        }
                     } else {
                         card.classList.remove('active');
                         card.style.opacity = 1 - (absOffset * 0.25); // Slightly smoother fade given the larger radius
@@ -359,22 +355,87 @@
             window.addEventListener('resize', updateCarousel);
             updateCarousel(); 
 
-            function navigateToSingleView(imgSrc, title, type) {
-                const params = new URLSearchParams({ src: imgSrc, title: title, type: type });
-                window.location.href = `single_craft_view.html?${params.toString()}`;
+            // --- 3. DYNAMIC GALLERY & FILTERING LOGIC (JSON FETCH) ---
+
+            const galleryContainer = document.getElementById('masonry-gallery');
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            
+            // Global variable to hold our fetched data so we don't re-fetch on every click
+            let galleryData = [];
+
+            // 1. Fetch the data from the JSON file
+            function renderGallery(filterCategory) {
+                galleryContainer.innerHTML = '';
+
+                const filteredData = filterCategory === 'all' 
+                    ? myGalleryData 
+                    : myGalleryData.filter(item => item.category === filterCategory);
+
+                filteredData.forEach((item, index) => {
+                    const delay = index * 0.1; 
+                    const cardHTML = `
+                        <div class="masonry-item animate-spin-in" style="animation-delay: ${delay}s;">
+                        <a href="#" class="block group craft-link" data-src="${item.img}" data-title="${item.title}" data-type="${item.type}">
+                            <div class="relative overflow-hidden mb-4 rounded-xl shadow-md group-hover:shadow-xl transition-shadow duration-500">
+                                <img alt="${item.title}" class="aspect-[4/5] w-full object-cover rounded-xl grayscale-[20%] group-hover:grayscale-0 transition-all duration-700" src="${item.img}"/>
+                            </div>
+                            <div class="text-center">
+                                <h3 class="font-display text-xl italic text-text-primary-light dark:text-text-primary-dark mb-1">${item.title}</h3>
+                                <p class="text-[10px] uppercase tracking-widest text-text-secondary-dark font-bold font-body">${item.type} • No. ${item.id}</p>
+                            </div>
+                        </a>
+                    </div>
+                    `;
+                    galleryContainer.insertAdjacentHTML('beforeend', cardHTML);
+                });
+
+                const masonryCards = galleryContainer.querySelectorAll('.craft-link');
+
+                masonryCards.forEach(card => {
+                    card.addEventListener('mouseenter', () => {
+                        const imgSrc = card.getAttribute('data-src');
+                        ambientImg.style.backgroundImage = `url('${imgSrc}')`;
+                        ambientBg.style.opacity = '1';
+                    });
+                    
+                    card.addEventListener('mouseleave', () => {
+                        ambientBg.style.opacity = '0';
+                    });
+                });
             }
 
-            const gridLinks = document.querySelectorAll('.craft-link');
-            gridLinks.forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault(); 
-                    const imgSrc = link.querySelector('img').src;
-                    const title = link.querySelector('h3').innerText;
-                    const rawType = link.querySelector('p').innerText; 
-                    const type = rawType.split(' •')[0];
-                    navigateToSingleView(imgSrc, title, type);
+            // 3. Handle clicking the filter buttons
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => {
+                        b.classList.remove('text-primary', 'border-primary');
+                        b.classList.add('text-text-secondary-dark', 'border-transparent');
+                    });
+
+                    btn.classList.remove('text-text-secondary-dark', 'border-transparent');
+                    btn.classList.add('text-primary', 'border-primary');
+
+                    const filterValue = btn.getAttribute('data-filter');
+                    renderGallery(filterValue);
                 });
             });
+
+            // 4. Delegated Navigation
+            galleryContainer.addEventListener('click', (e) => {
+                const link = e.target.closest('.craft-link');
+                if (link) {
+                    e.preventDefault();
+                    const imgSrc = link.getAttribute('data-src');
+                    const title = link.getAttribute('data-title');
+                    const type = link.getAttribute('data-type');
+                    
+                    const params = new URLSearchParams({ src: imgSrc, title: title, type: type });
+                    window.location.href = `single_craft_view.html?${params.toString()}`;
+                }
+            });
+
+            // 5. Kick off the fetch process
+            renderGallery('all');
         });
     </script>
 </body>
