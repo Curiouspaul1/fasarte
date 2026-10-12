@@ -3,1021 +3,766 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Orneril | A Digital Exhibition of Beadwork</title>
-    <meta name="description" content="Orneril: hand-strung necklaces, bracelets, sets and lanyards, exhibited room by room."/>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <title>Artestoa | A Hall of Handcraft</title>
+    <meta name="description" content="Artestoa: a hall of handcraft. Walk the corridor; every frame on its walls is a doorway into a maker's own gallery."/>
+
+    <!-- Links from before Orneril joined the hall (index.html#w-…, #room-…, #about) go to its gallery -->
+    <script>
+        if (/^#(w-|room-|about$)/.test(location.hash)) location.replace(`gallery.html?a=orneril${location.hash}`);
+    </script>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-
     <script>
         tailwind.config = {
-        darkMode: "media",
-        theme: {
-            extend: {
-            colors: {
-                primary: "#6B8E23",
-                "background-light": "#F4F1EA",
-                "background-dark": "#141413",
-                "text-primary-light": "#262626",
-                "text-primary-dark": "#F5F5F5",
-                "text-secondary-light": "#5C5A55",
-                "text-secondary-dark": "#A3A3A3",
+            darkMode: "media",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "rgb(var(--accent) / <alpha-value>)",
+                        "background-light": "#EFEAE0",
+                        "background-dark": "#0E0D0C",
+                        "text-secondary-light": "#5C5A55",
+                        "text-secondary-dark": "#A3A3A3",
+                    },
+                    fontFamily: {
+                        display: ["Playfair Display", "serif"],
+                        body: ["Inter", "sans-serif"],
+                    },
+                },
             },
-            fontFamily: {
-                display: ["Playfair Display", "serif"],
-                body: ["Inter", "sans-serif"],
-            }
-            },
-        },
         };
     </script>
 
     <style>
         @view-transition { navigation: auto; }
-        ::view-transition-group(artwork) { animation-duration: 0.55s; animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1); }
 
         :root {
-            --wall: #F4F1EA;
-            --wall-shade: #E9E4D9;
+            --accent: 176 132 68;           /* brass: the hall's own accent */
+            --bg: #EFEAE0;
+            --ink: #23211e;
+            --muted: #5C5A55;
+            --wall-near: #ECE6DA;
+            --wall-far: #D3CABA;
+            --floor-near: #CFC6B5;
+            --floor-far: #B3A994;
+            --ceiling: #F4F0E8;
             --frame: #1d1b18;
             --mat: #FBFAF7;
-            --ink: #262626;
-            --muted: #5C5A55;
-            --glow: 107, 142, 35;
+            --brass: #b08444;
         }
         @media (prefers-color-scheme: dark) {
             :root {
-                --wall: #141413;
-                --wall-shade: #1d1c1a;
+                --bg: #0E0D0C;
+                --ink: #F3F0EA;
+                --muted: #A3A3A3;
+                --wall-near: #23201C;
+                --wall-far: #121110;
+                --floor-near: #151311;
+                --floor-far: #0A0908;
+                --ceiling: #1B1A17;
                 --frame: #050505;
                 --mat: #ECE8DF;
-                --ink: #F5F5F5;
-                --muted: #A3A3A3;
             }
         }
 
-        html { scroll-behavior: smooth; scroll-padding-top: 72px; }
-        body { background: var(--wall); overflow-x: clip; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Background on <html> only: a body background would paint over the flat walk's
+           glow layer (z-index -1) */
+        html { background: var(--bg); color: var(--ink); }
+        body { overflow-x: clip; }
         .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 300; }
         .fill-icon { font-variation-settings: 'FILL' 1, 'wght' 400; }
+        .wordmark { font-family: "Playfair Display", serif; font-style: italic; letter-spacing: -0.01em; }
 
-        /* ---------- Entrance ---------- */
-        .entrance-rule { width: 1px; height: 56px; background: currentColor; opacity: .25; margin: 0 auto; }
-        @keyframes drift { 0%,100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
-        .drift { animation: drift 2.4s ease-in-out infinite; }
-
-        /* ---------- 3D cylinder carousel ---------- */
-        .carousel-viewport {
-            perspective: 2000px;
-            width: 100%;
-            height: 350px;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        /* ================= 3D corridor (wide screens) ================= */
+        #corridor { position: relative; }
+        #scene {
+            position: sticky;
+            top: 0;
+            height: 100vh;
             overflow: hidden;
-            touch-action: pan-y;
-            cursor: grab;
+            perspective: 820px;
+            perspective-origin: 50% 46%;
+            background: var(--bg);
         }
-        .carousel-viewport.dragging { cursor: grabbing; }
-        @media (min-width: 768px) { .carousel-viewport { height: 460px; } }
-
-        .carousel-scene {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            transform-style: preserve-3d;
-            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
-            will-change: transform;
-        }
-
-        .carousel-card {
+        #world {
             position: absolute;
             left: 50%;
             top: 50%;
-            width: 240px;
-            height: 320px;
-            margin-left: -120px;
-            margin-top: -160px;
-            border-radius: 4px;
-            overflow: hidden;
-            background: var(--frame);
-            padding: 10px;
-            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.5);
-            cursor: pointer;
-            transition: opacity 0.8s ease;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
+            width: 0;
+            height: 0;
+            transform-style: preserve-3d;
+            will-change: transform;
         }
-        @media (min-width: 768px) {
-            .carousel-card {
-                width: 300px; height: 400px;
-                margin-left: -150px; margin-top: -200px;
-            }
-        }
-        .carousel-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            pointer-events: none;
-            user-select: none;
-        }
-        .carousel-overlay {
-            position: absolute;
-            inset: 10px;
-            background: rgba(0,0,0,0.45);
-            transition: opacity 0.8s ease;
-        }
-        .carousel-content {
-            position: absolute;
-            inset: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            align-items: center;
-            padding-bottom: 28px;
-            background: linear-gradient(to top, rgba(0,0,0,.65), rgba(0,0,0,0) 55%);
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            pointer-events: none;
-        }
-        .carousel-card.active .carousel-overlay { opacity: 0; }
-        .carousel-card.active .carousel-content { opacity: 1; pointer-events: auto; }
-        .carousel-card.active { cursor: default; }
+        #world > * { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 
-        /* ---------- Room navigation ---------- */
-        #room-nav { background: color-mix(in srgb, var(--wall) 92%, transparent); }
-        .room-link { color: var(--muted); border-bottom: 1px solid transparent; }
-        /* On narrow screens the room list scrolls sideways; fade its edges to say so */
-        @media (max-width: 767px) {
-            #room-links { mask-image: linear-gradient(to right, transparent, #000 20px, #000 calc(100% - 48px), transparent); }
+        /* Long surfaces are drawn at 1/4 size and scaled up (see SURFACE_SCALE): their
+           gradients stay smooth and the GPU never has to hold a 6000px-long texture. */
+        .wall  { background: linear-gradient(to right, var(--wall-near), var(--wall-far)); }
+        .wall::after {
+            content: ""; position: absolute; inset: 0;
+            background: linear-gradient(to bottom, rgba(255,250,235,.10), transparent 30%, transparent 78%, rgba(0,0,0,.10));
         }
-        .room-link:hover { color: rgb(var(--glow)); }
-        .room-link.active { color: rgb(var(--glow)); border-color: rgb(var(--glow)); }
-
-        /* ---------- Rooms & framed works ---------- */
-        .room { position: relative; }
-        /* A soft wash of light falls across the top of each room's wall */
-        .room::before {
-            content: "";
-            position: absolute;
-            /* Exactly viewport-wide and centred: anything wider makes phones widen the
-               whole layout (body's overflow clip doesn't stop that on mobile browsers) */
-            top: 0;
-            bottom: 0;
-            left: 50%;
-            width: 100vw;
-            transform: translateX(-50%);
-            /* Light pours down from above: fade it in so the room's top edge never shows */
-            -webkit-mask-image: linear-gradient(to bottom, transparent, #000 160px);
-            mask-image: linear-gradient(to bottom, transparent, #000 160px);
-            background: radial-gradient(70% 45% at 50% 120px, rgba(255, 248, 225, .55), transparent 70%);
-            pointer-events: none;
-            z-index: -1;
+        .floor { background: linear-gradient(to bottom, var(--floor-near), var(--floor-far)); }
+        .ceiling { background: var(--ceiling); }
+        .ceiling-light {
+            background: rgba(255, 248, 228, .95);
+            box-shadow: 0 0 40px 12px rgba(255, 240, 205, .45);
+            border-radius: 3px;
         }
         @media (prefers-color-scheme: dark) {
-            .room::before { background: radial-gradient(70% 45% at 50% 120px, rgba(255, 240, 200, .06), transparent 70%); }
+            .ceiling-light { background: rgba(255, 236, 196, .85); box-shadow: 0 0 46px 14px rgba(255, 220, 160, .22); }
         }
+        .floor-pool {
+            background: radial-gradient(closest-side, rgba(255, 244, 214, .55), transparent);
+            border-radius: 50%;
+        }
+        @media (prefers-color-scheme: dark) { .floor-pool { background: radial-gradient(closest-side, rgba(255, 226, 170, .10), transparent); } }
 
-        .wall {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 40px 20px;
-            align-items: start;
-        }
-        @media (min-width: 768px) {
-            .wall { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 64px 44px; }
-            /* Salon hang: the middle column sits lower, so the wall breathes */
-            .wall > .work:nth-child(3n+2) { margin-top: 72px; }
-        }
-        @media (max-width: 767px) {
-            .wall > .work:nth-child(2n) { margin-top: 40px; }
-        }
-
-        .work {
-            opacity: 0;
-            transform: perspective(1000px) rotateY(-18deg) translateY(30px);
-            transition: opacity .9s ease, transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.1);
-            transition-delay: var(--d, 0s);
-        }
-        .work.in-view { opacity: 1; transform: none; }
-
-        .frame {
-            position: relative;
-            display: block;
+        .banner {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             background: var(--frame);
-            padding: 7px;
-            box-shadow:
-                0 1px 0 rgba(255,255,255,.06) inset,
-                0 2px 4px rgba(0,0,0,.12),
-                0 22px 40px -18px rgba(0,0,0,.45);
-            transition: transform .6s cubic-bezier(0.25, 1, 0.5, 1), box-shadow .6s ease;
+            color: #f3efe6;
+            border-bottom: 3px solid var(--brass);
+            box-shadow: 0 30px 50px -30px rgba(0,0,0,.6);
+            text-align: center;
         }
-        .frame .mat {
-            background: var(--mat);
-            padding: 9%;
-            box-shadow: inset 0 0 0 1px rgba(0,0,0,.06), inset 0 4px 10px rgba(0,0,0,.08);
+        .back-wall {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(60% 50% at 50% 45%, var(--wall-near), var(--wall-far));
+            text-align: center;
         }
-        .frame img {
-            display: block;
-            width: 100%;
+
+        /* ---------- Portals ---------- */
+        .portal { display: block; color: inherit; text-decoration: none; }
+        .portal .frame {
+            position: relative;
+            background: var(--frame);
+            padding: 9px;
+            box-shadow: 0 2px 4px rgba(0,0,0,.15), 0 30px 50px -24px rgba(0,0,0,.55);
+            transition: box-shadow .5s ease;
+        }
+        .portal .mat { background: var(--mat); padding: 10%; }
+        .portal img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
+        .portal .plaque {
+            margin: 14px auto 0;
+            width: fit-content;
+            max-width: 100%;
+            padding: 6px 14px;
+            background: linear-gradient(180deg, #d8b778, #a87c3c);
+            color: #2a1d0b;
+            border-radius: 2px;
+            box-shadow: 0 2px 6px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.4);
+            text-align: center;
+        }
+        .portal.lit .frame { box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 0 60px 6px var(--lit, rgba(255,240,200,.25)), 0 30px 50px -24px rgba(0,0,0,.55); }
+
+        /* An open wall: an empty frame waiting for a maker */
+        .portal.open .mat {
             aspect-ratio: 3 / 4;
-            object-fit: cover;
+            padding: 0;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+            background:
+                repeating-linear-gradient(45deg, rgba(0,0,0,.025) 0 2px, transparent 2px 7px),
+                var(--mat);
+            box-shadow: inset 0 0 0 10px var(--mat), inset 0 0 0 11px rgba(0,0,0,.14);
+            color: #6b6458;
+            text-align: center;
         }
-        /* Gallery spotlight that follows the pointer across the glass */
-        .frame::after {
-            content: "";
-            position: absolute;
-            inset: 7px;
-            background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 30%), rgba(255,255,255,.22), transparent 60%);
-            opacity: 0;
-            transition: opacity .4s ease;
-            pointer-events: none;
+        .portal.open .plus {
+            width: 44px; height: 44px; border-radius: 999px;
+            border: 1px dashed rgba(0,0,0,.35);
+            display: flex; align-items: center; justify-content: center;
+            transition: transform .4s ease, background-color .4s ease;
         }
-        .work a:hover .frame, .work a:focus-visible .frame {
-            transform: translateY(-6px);
-            box-shadow:
-                0 2px 4px rgba(0,0,0,.12),
-                0 40px 60px -22px rgba(0,0,0,.55);
-        }
-        .work a:hover .frame::after { opacity: 1; }
-        .work a:focus-visible { outline: none; }
-        .work a:focus-visible .frame { outline: 2px solid rgb(var(--glow)); outline-offset: 6px; }
+        .portal.open:hover .plus { transform: scale(1.1); background: rgba(0,0,0,.05); }
+        .portal.open .plaque { background: linear-gradient(180deg, #cfc8ba, #a49c8c); }
 
-        /* Dim the rest of the wall to focus on the hovered work */
-        @media (hover: hover) {
-            /* Opacity only: it stays on the compositor, unlike filter: grayscale() */
-            .wall:has(.work a:hover) .work:not(:hover) { opacity: .45; }
-            .work.in-view { transition: opacity .5s ease, transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.1); }
+        /* ---------- HUD over the corridor ---------- */
+        #hud { position: absolute; inset: 0; pointer-events: none; }
+        #hud > * { pointer-events: auto; }
+        #focus-card { transition: opacity .35s ease, transform .35s ease; }
+        #focus-card.hidden-card { opacity: 0; transform: translate(-50%, 12px); pointer-events: none; }
+        #hall-hero { transition: opacity .2s linear; }
+        .wing-dot { width: 8px; height: 8px; border-radius: 999px; background: rgba(127,127,127,.4); transition: transform .3s ease, background-color .3s ease; }
+        .wing-dot.active { background: rgb(var(--accent)); transform: scale(1.5); }
+
+        /* Coloured light from the portal ahead, laid over the scene */
+        #hero-scrim {
+            position: absolute; inset: 0; pointer-events: none;
+            background: radial-gradient(48% 42% at 50% 40%, var(--bg) 0%, color-mix(in srgb, var(--bg) 80%, transparent) 45%, transparent 80%);
         }
+        #hall-glow { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .9s ease; }
+        #hall-glow.on { opacity: .5; }
+        @media (prefers-color-scheme: dark) { #hall-glow.on { opacity: .38; } }
 
-        .placard {
-            margin-top: 18px;
-            padding-left: 12px;
-            border-left: 1px solid color-mix(in srgb, var(--ink) 20%, transparent);
+        /* ================= Flat walk (phones, reduced motion) ================= */
+        .flat-portal { perspective: 900px; }
+        .flat-portal .portal { transition: transform .9s cubic-bezier(0.25, 1, 0.5, 1), opacity .9s ease; }
+        .flat-portal.left .portal  { transform: rotateY(12deg); transform-origin: 0 50%; }
+        .flat-portal.right .portal { transform: rotateY(-12deg); transform-origin: 100% 50%; }
+        .flat-portal.lit .portal { transform: none; }
+        .flat-ambient { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity .9s ease; }
+        .flat-ambient.on { opacity: .45; }
+
+        /* ================= Stepping through a portal ================= */
+        #veil {
+            position: fixed; inset: 0; z-index: 100; pointer-events: none;
+            clip-path: circle(0 at var(--vx, 50%) var(--vy, 50%));
+            transition: clip-path .6s cubic-bezier(0.65, 0, 0.35, 1);
         }
-        .work.just-visited .frame { outline: 1px solid rgb(var(--glow)); outline-offset: 8px; }
+        #veil.open { clip-path: circle(150% at var(--vx, 50%) var(--vy, 50%)); pointer-events: auto; }
 
-        .heart-badge {
-            position: absolute; top: 14px; right: 14px;
-            width: 28px; height: 28px; border-radius: 999px;
-            display: none; align-items: center; justify-content: center;
-            background: rgba(255,255,255,.85); color: #c2334d;
-            box-shadow: 0 4px 10px rgba(0,0,0,.15);
-        }
-        .work.is-fav .heart-badge { display: flex; }
-
-        /* ---------- The Artist ---------- */
-        .material-chip {
-            border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
-            transition: border-color .3s ease, color .3s ease;
-        }
-        .material-chip:hover { border-color: rgb(var(--glow)); color: rgb(var(--glow)); }
-        .artist-work img { transition: transform .6s cubic-bezier(0.25, 1, 0.5, 1); }
-        .artist-work:hover img { transform: scale(1.04); }
-
-        /* While the page is moving, frames sliding under a still pointer shouldn't
-           trigger hover effects (each one restyles the wall and swaps the ambient light) */
-        .is-scrolling #rooms { pointer-events: none; }
-
-        /* ---------- Ambient light ----------
-           Two stacked layers crossfade. Each is painted with soft radial gradients in the
-           work's bead colours (glowFor in gallery_data.js), so no CSS blur is ever computed. */
-        .ambient-layer {
-            position: absolute;
-            inset: 0;
-            opacity: 0;
-            transition: opacity .9s ease;
-            will-change: opacity;
-        }
-        .ambient-layer.on { opacity: 1; }
-
-        /* ---------- Overlay sheet (search / saved / about) ---------- */
         #sheet[hidden] { display: none; }
         #sheet .panel { animation: sheetUp .45s cubic-bezier(0.25, 1, 0.5, 1); }
         @keyframes sheetUp { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 
         @media (prefers-reduced-motion: reduce) {
-            html { scroll-behavior: auto; }
-            .work { opacity: 1; transform: none; transition: none; }
-            .carousel-scene { transition: none; }
-            .drift { animation: none; }
+            #veil { transition: none; }
+            .flat-portal .portal { transition: none; }
         }
     </style>
+    <script>
+        // A page transition the browser skips (e.g. the tab is in the background) rejects
+        // its promises; that's expected, so keep it out of the console
+        addEventListener('pageswap', (e) => e.viewTransition?.ready.catch(() => {}));
+        addEventListener('pagereveal', (e) => e.viewTransition?.ready.catch(() => {}));
+    </script>
 </head>
+<body class="font-body antialiased selection:bg-primary/30">
 
-<body class="text-text-primary-light dark:text-text-primary-dark font-body antialiased selection:bg-primary/30">
-
-    <div id="ambient-bg" class="fixed inset-0 -z-10 pointer-events-none transition-opacity duration-[1200ms] ease-out opacity-0 overflow-hidden" style="transform: translate3d(0,0,0);">
-        <div class="ambient-layer"></div>
-        <div class="ambient-layer"></div>
-        <div class="absolute inset-0 bg-background-light/30 dark:bg-background-dark/40"></div>
-    </div>
-
-    <!-- ===== Entrance ===== -->
-    <header class="pt-16 md:pt-24 pb-8 px-6 text-center">
-        <p class="text-[11px] font-semibold tracking-[0.35em] uppercase text-text-secondary-light dark:text-text-secondary-dark mb-6">A Digital Exhibition<span class="hidden sm:inline"> • </span><br class="sm:hidden"/>Handcrafted Beadwork</p>
-        <h1 class="font-display text-6xl md:text-8xl font-medium italic mb-5 tracking-tight">Orneril</h1>
-        <p class="font-light text-sm md:text-base max-w-md mx-auto text-text-secondary-light dark:text-text-secondary-dark leading-relaxed">
-            Stone, glass, wood and shell, strung one bead at a time. Walk the rooms, step close to any piece, and look for the small stories hidden in its charms.
-        </p>
-        <p id="exhibit-stats" class="mt-6 text-[11px] uppercase tracking-[0.25em] text-text-secondary-light dark:text-text-secondary-dark"></p>
-        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <a id="tour-link" href="#" class="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-full text-sm font-medium hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-colors shadow-lg">
-                Begin the guided tour
-                <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </a>
-            <a href="#rooms" class="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium border border-black/15 dark:border-white/20 hover:border-primary hover:text-primary transition-colors">
-                Wander the rooms
-            </a>
-        </div>
-        <a href="#room-artist" class="mt-6 inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.25em] text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors">
-            Meet the artist
-            <span class="material-symbols-outlined text-[16px]">south</span>
+    <!-- Hero: hangs over the corridor's vanishing point (3D) or opens the walk (flat) -->
+    <header id="hall-hero" class="text-center px-6">
+        <p class="text-[11px] font-semibold tracking-[0.4em] uppercase opacity-70 mb-5">Welcome to</p>
+        <h1 class="wordmark text-7xl md:text-[7.5rem] leading-none mb-5">arte·stoa</h1>
+        <p class="text-sm md:text-base font-light max-w-md mx-auto opacity-80 leading-relaxed" id="hall-intro"></p>
+        <p id="hall-stats" class="mt-6 text-[11px] uppercase tracking-[0.25em] opacity-60"></p>
+        <a href="#" id="enter-hall" class="mt-8 inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-full text-sm font-medium hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-colors shadow-lg">
+            Walk the hall
+            <span class="material-symbols-outlined text-[18px]">south</span>
         </a>
     </header>
 
-    <!-- ===== In the Spotlight (carousel) ===== -->
-    <section class="relative w-full pt-6 pb-4 overflow-hidden" aria-label="In the spotlight">
-        <p class="text-center text-[11px] font-semibold tracking-[0.35em] uppercase text-text-secondary-light dark:text-text-secondary-dark">In the Spotlight</p>
-        <div class="carousel-viewport" id="carousel-viewport" tabindex="0" aria-roledescription="carousel" aria-label="Featured works. Use the arrow keys to rotate.">
-            <div class="carousel-scene" id="carousel-scene"></div>
-        </div>
-
-        <div class="flex justify-center items-center gap-6 mt-2 relative z-20">
-            <button id="btn-prev" aria-label="Previous featured work" class="w-12 h-12 rounded-full bg-black/5 dark:bg-white/10 text-gray-700 dark:text-gray-200 flex items-center justify-center hover:bg-primary hover:text-white transition-all transform active:scale-90">
-                <span class="material-symbols-outlined text-[24px]">chevron_left</span>
-            </button>
-            <p id="carousel-caption" class="min-w-[9rem] text-center text-[11px] uppercase tracking-[0.25em] text-text-secondary-light dark:text-text-secondary-dark" aria-live="polite"></p>
-            <button id="btn-next" aria-label="Next featured work" class="w-12 h-12 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 flex items-center justify-center hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-all transform active:scale-90 shadow-lg">
-                <span class="material-symbols-outlined text-[24px]">chevron_right</span>
-            </button>
-        </div>
-
-        <div class="mt-14 flex flex-col items-center text-text-secondary-light dark:text-text-secondary-dark">
-            <span class="entrance-rule"></span>
-            <a href="#rooms" class="drift mt-3 text-[11px] uppercase tracking-[0.3em] hover:text-primary transition-colors">Enter the gallery</a>
-        </div>
-    </section>
-
-    <!-- ===== Room navigation ===== -->
-    <nav id="room-nav" class="sticky top-0 z-40 mt-12 backdrop-blur-sm border-b border-black/5 dark:border-white/5" aria-label="Rooms">
-        <div class="flex md:justify-center overflow-x-auto no-scrollbar py-4 gap-8 px-6" id="room-links"></div>
-    </nav>
-
-    <main id="rooms" class="px-5 md:px-6 pb-24 max-w-5xl mx-auto"></main>
-
-    <!-- ===== The Artist ===== -->
-    <section id="room-artist" class="room px-5 md:px-6 pt-24 md:pt-32 pb-40 max-w-5xl mx-auto" aria-labelledby="artist-name">
-        <header class="mb-14 md:mb-20">
-            <p class="text-[11px] font-semibold tracking-[0.35em] uppercase text-primary mb-3">The Last Room</p>
-            <p class="font-display text-4xl md:text-5xl italic leading-none">Meet the Artist</p>
-        </header>
-
-        <div class="grid md:grid-cols-[minmax(0,5fr),minmax(0,7fr)] gap-12 md:gap-20 items-start">
-            <figure class="work artist-portrait max-w-sm mx-auto md:mx-0 w-full">
-                <div class="frame">
-                    <div class="mat">
-                        <div id="artist-portrait" class="aspect-[3/4] w-full overflow-hidden"></div>
-                    </div>
-                </div>
-                <figcaption class="placard">
-                    <p id="artist-plaque-name" class="font-display text-lg italic leading-snug"></p>
-                    <p id="artist-plaque-meta" class="mt-1 text-[10px] uppercase tracking-[0.18em] text-text-secondary-light dark:text-text-secondary-dark font-semibold"></p>
-                </figcaption>
-            </figure>
-
-            <div class="work" style="--d:.12s">
-                <h2 id="artist-name" class="font-display text-5xl md:text-6xl italic leading-[1.05] mb-3"></h2>
-                <p id="artist-role" class="text-[11px] uppercase tracking-[0.25em] text-text-secondary-light dark:text-text-secondary-dark mb-10"></p>
-
-                <blockquote id="artist-quote" hidden class="font-display text-2xl md:text-3xl italic leading-snug mb-10 pl-6 border-l-2 border-primary"></blockquote>
-
-                <div id="artist-bio" class="space-y-5 font-light text-base md:text-lg leading-relaxed text-text-secondary-light dark:text-text-secondary-dark"></div>
-
-                <dl id="artist-facts" class="grid grid-cols-3 gap-4 py-6 mt-10 border-t border-b border-black/10 dark:border-white/10"></dl>
-
-                <div class="mt-10">
-                    <p class="text-[10px] uppercase tracking-[0.25em] font-semibold mb-4">Signature materials</p>
-                    <div id="artist-materials" class="flex flex-wrap gap-2"></div>
-                </div>
-
-                <div id="artist-links" class="mt-10 flex flex-wrap gap-3 empty:hidden"></div>
+    <!-- 3D corridor -->
+    <section id="corridor" hidden aria-label="The hall">
+        <div id="scene">
+            <div id="world"></div>
+            <div id="hall-glow" aria-hidden="true"></div>
+            <!-- Softens the far end of the hall behind the welcome text, then lifts as you walk -->
+            <div id="hero-scrim" aria-hidden="true"></div>
+            <div id="hud">
+                <a href="#" id="hud-mark" class="absolute top-5 left-6 wordmark text-xl opacity-80 hover:opacity-100">arte·stoa</a>
+                <p id="hud-wing" class="absolute top-6 left-1/2 -translate-x-1/2 text-[11px] uppercase tracking-[0.3em] opacity-70 whitespace-nowrap"></p>
+                <nav id="wing-dots" class="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4" aria-label="Wings"></nav>
+                <div id="focus-card" class="hidden-card absolute left-1/2 bottom-28 -translate-x-1/2 w-[min(92vw,460px)] rounded-2xl px-6 py-5 bg-[#fbf9f4]/95 dark:bg-[#1c1b19]/90 backdrop-blur-md shadow-2xl border border-black/5 dark:border-white/10 text-center" aria-live="polite"></div>
+                <p class="absolute bottom-6 left-6 text-[10px] uppercase tracking-[0.25em] opacity-50 hidden lg:block">Scroll or ↑ ↓ to walk · Enter to step inside</p>
             </div>
         </div>
-
-        <div class="mt-20 md:mt-28">
-            <p class="text-[10px] uppercase tracking-[0.25em] font-semibold mb-6 text-center md:text-left">Selected works</p>
-            <div id="artist-works" class="grid grid-cols-3 md:grid-cols-6 gap-4 md:gap-6"></div>
-        </div>
     </section>
 
-    <!-- ===== Exit ===== -->
-    <section id="about" class="px-6 pb-48 max-w-2xl mx-auto text-center">
-        <span class="entrance-rule mb-10 block"></span>
-        <p class="text-[11px] font-semibold tracking-[0.35em] uppercase text-text-secondary-light dark:text-text-secondary-dark mb-4">Exit</p>
-        <h2 class="font-display text-4xl italic mb-6">Thank you for visiting</h2>
-        <p class="font-light leading-relaxed text-text-secondary-light dark:text-text-secondary-dark">
-            Orneril is a small studio making jewellery entirely by hand: necklaces, bracelets, sets and phone lanyards, each one designed around a single palette or story.
-            Every piece in this exhibition was strung, finished and photographed in the studio between 2023 and 2025.
+    <!-- Flat walk -->
+    <main id="walk" hidden class="max-w-xl mx-auto px-5 pb-16"></main>
+    <div class="flat-ambient" id="flat-ambient" aria-hidden="true"></div>
+
+    <!-- Exhibit -->
+    <section id="exhibit" class="relative px-6 pt-28 pb-48 max-w-3xl mx-auto">
+        <p class="text-[11px] font-semibold tracking-[0.35em] uppercase text-primary mb-4 text-center">Open walls</p>
+        <h2 class="font-display italic text-4xl md:text-5xl text-center mb-6">Exhibit at Artestoa</h2>
+        <p class="font-light text-base md:text-lg leading-relaxed text-center max-w-xl mx-auto opacity-80">
+            Every empty frame in the hall is waiting for a maker. If you make things by hand (beadwork, textiles, ceramics, wood, leather or metal), your work can hang here, in a gallery of its own.
         </p>
-        <p id="saved-summary" class="mt-8 text-sm text-text-secondary-light dark:text-text-secondary-dark"></p>
+
+        <ol class="mt-14 grid md:grid-cols-3 gap-8">
+            <li class="rounded-2xl p-6 border border-black/10 dark:border-white/10">
+                <p class="font-display italic text-3xl text-primary mb-3">I</p>
+                <h3 class="font-semibold mb-2">Photograph each piece</h3>
+                <p class="text-sm font-light opacity-80 leading-relaxed">On a plain backdrop, in soft daylight. A few angles of each piece is perfect.</p>
+            </li>
+            <li class="rounded-2xl p-6 border border-black/10 dark:border-white/10">
+                <p class="font-display italic text-3xl text-primary mb-3">II</p>
+                <h3 class="font-semibold mb-2">One folder per piece</h3>
+                <p class="text-sm font-light opacity-80 leading-relaxed">Name each folder after the piece. Add a line or two about it: what it's made of, and the story behind it.</p>
+            </li>
+            <li class="rounded-2xl p-6 border border-black/10 dark:border-white/10">
+                <p class="font-display italic text-3xl text-primary mb-3">III</p>
+                <h3 class="font-semibold mb-2">Tell us about you</h3>
+                <p class="text-sm font-light opacity-80 leading-relaxed">Your name or studio, where you work, your craft, and a portrait if you'd like one. We'll hang the rest.</p>
+            </li>
+        </ol>
+
+        <div id="exhibit-actions" class="mt-14 flex flex-wrap items-center justify-center gap-3"></div>
     </section>
 
-    <!-- ===== Dock ===== -->
+    <!-- Dock -->
     <footer class="fixed bottom-8 left-0 right-0 flex justify-center z-50 pointer-events-none">
-        <div class="bg-white/60 dark:bg-[#1C1C1E]/75 backdrop-blur-md border border-black/10 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-full px-7 py-3.5 flex items-center gap-6 pointer-events-auto transition-transform duration-300 hover:scale-105">
-            <button data-dock="rooms" aria-label="Jump to the rooms" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
-                <span class="material-symbols-outlined text-[22px]">grid_view</span>
+        <div class="bg-white/60 dark:bg-[#1C1C1E]/75 backdrop-blur-md border border-black/10 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-full px-7 py-3.5 flex items-center gap-6 pointer-events-auto">
+            <button data-dock="wings" aria-label="Wings of the hall" class="opacity-80 hover:text-primary hover:opacity-100 transition-colors">
+                <span class="material-symbols-outlined text-[22px]">door_open</span>
             </button>
             <div class="w-[1px] h-5 bg-black/15 dark:bg-white/15"></div>
-            <button data-dock="search" aria-label="Search the collection" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
-                <span class="material-symbols-outlined text-[22px]">search</span>
-            </button>
-            <div class="w-[1px] h-5 bg-black/15 dark:bg-white/15"></div>
-            <button data-dock="saved" aria-label="Your saved works" class="relative text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
+            <button data-dock="saved" aria-label="Your saved works" class="relative opacity-80 hover:text-primary hover:opacity-100 transition-colors">
                 <span class="material-symbols-outlined text-[22px]">favorite</span>
                 <span id="saved-count" class="hidden absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-white text-[10px] font-semibold leading-[18px] text-center"></span>
             </button>
             <div class="w-[1px] h-5 bg-black/15 dark:bg-white/15"></div>
-            <button data-dock="artist" aria-label="Meet the artist" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
-                <span class="material-symbols-outlined text-[22px]">person</span>
+            <button data-dock="exhibit" aria-label="Exhibit your work" class="opacity-80 hover:text-primary hover:opacity-100 transition-colors">
+                <span class="material-symbols-outlined text-[22px]">add_circle</span>
             </button>
         </div>
     </footer>
 
-    <!-- ===== Overlay sheet ===== -->
+    <!-- Sheet (wings / saved) -->
     <div id="sheet" class="fixed inset-0 z-[60]" hidden role="dialog" aria-modal="true" aria-labelledby="sheet-title">
         <div data-close class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-        <div class="panel absolute left-1/2 -translate-x-1/2 bottom-0 md:bottom-auto md:top-[12vh] w-full md:w-[560px] max-h-[80vh] flex flex-col bg-background-light dark:bg-[#1C1C1E] rounded-t-3xl md:rounded-3xl shadow-2xl">
+        <div class="panel absolute left-1/2 -translate-x-1/2 bottom-0 md:bottom-auto md:top-[12vh] w-full md:w-[520px] max-h-[80vh] flex flex-col bg-background-light dark:bg-[#1C1C1E] rounded-t-3xl md:rounded-3xl shadow-2xl">
             <div class="flex items-center justify-between px-6 pt-5 pb-3">
                 <h2 id="sheet-title" class="font-display text-2xl italic"></h2>
                 <button data-close aria-label="Close" class="w-9 h-9 rounded-full hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
-            <div id="search-wrap" class="px-6 pb-3">
-                <input id="search-input" type="search" autocomplete="off" placeholder="Search by name, stone, colour, room…" class="w-full rounded-xl border-black/10 dark:border-white/10 bg-white dark:bg-black/30 focus:border-primary focus:ring-primary text-sm"/>
-            </div>
             <ul id="sheet-list" class="overflow-y-auto px-3 pb-6"></ul>
         </div>
     </div>
 
-    <script src="gallery_data.js"></script>
+    <div id="veil" aria-hidden="true"></div>
+
+    <script src="artists/registry.js"></script>
+    <script src="core/artestoa.js"></script>
     <script>
-        // Coming back from a work: let the browser morph its image back into its frame
-        window.addEventListener('pagereveal', (e) => {
-            if (!e.viewTransition || !location.hash.startsWith('#w-')) return;
-            const img = document.querySelector(`${CSS.escape(location.hash)} img`);
-            if (!img) return;
-            img.style.viewTransitionName = 'artwork';
-            e.viewTransition.finished.finally(() => (img.style.viewTransitionName = ''));
+    (() => {
+        const { escapeHtml, glowFor } = Artestoa;
+        const $ = (id) => document.getElementById(id);
+        const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+        const NEUTRAL = ['#d8cfbf', '#b9ad97', '#8c8170']; // light for an empty wall
+
+        // ---------- The walk: wings, then each wing's makers, then its open walls ----------
+        const wings = artestoa.wings.map((wing, i) => ({
+            ...wing,
+            numeral: ROMAN[i],
+            makers: artestoa.artists.filter((a) => a.wing === wing.id),
+        }));
+        const stops = [];
+        wings.forEach((wing) => {
+            stops.push({ kind: 'banner', wing });
+            wing.makers.forEach((artist) => stops.push({ kind: 'maker', wing, artist, id: `portal-${artist.slug}` }));
+            for (let n = 0; n < wing.openWalls; n++) stops.push({ kind: 'open', wing, id: `open-${wing.id}-${n + 1}` });
         });
+        const portals = stops.filter((s) => s.kind !== 'banner');
 
-        document.addEventListener('DOMContentLoaded', () => {
+        const openCount = portals.filter((p) => p.kind === 'open').length;
+        const workCount = artestoa.artists.reduce((n, a) => n + a.works, 0);
+        $('hall-intro').textContent = `${artestoa.tagline}. Walk the corridor: every frame on these walls is a doorway into a maker's own gallery.`;
+        $('hall-stats').textContent = `${artestoa.artists.length} ${artestoa.artists.length === 1 ? 'maker' : 'makers'} · ${workCount} works · ${wings.length} wings · ${openCount} open walls`;
 
-            const detailUrl = (work, extra = {}) =>
-                `single_craft_view.html?${new URLSearchParams({ id: work.id, ...extra })}`;
-            const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-            const roomOf = (work) => galleryRooms.find((r) => r.id === work.room);
-            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-            // Favourites are shared with the detail page via localStorage
-            const FAV_KEY = 'orneril:favourites';
-            const readFavs = () => { try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch { return []; } };
-
-            // --- Entrance details ---
-            const named = myGalleryData.filter((w) => w.room !== 'archive');
-            const photoCount = myGalleryData.reduce((n, w) => n + w.images.length, 0);
-            document.getElementById('exhibit-stats').textContent =
-                `${myGalleryData.length} works · ${photoCount} photographs · ${galleryRooms.length} rooms`;
-            document.getElementById('tour-link').href = detailUrl(named[0], { tour: 1 });
-
-            // --- Ambient light: tints the whole gallery with the work in focus ---
-            const ambientBg = document.getElementById('ambient-bg');
-            const ambientLayers = ambientBg.querySelectorAll('.ambient-layer');
-            let ambientKey = null;
-            let ambientFront = 0;
-            let ambientTimer = null;
-            let carouselAmbient = null;
-            let carouselInView = true;
-
-            // Repainting the backdrop is the most expensive thing on this page, so:
-            //  - it is skipped entirely when the image hasn't changed,
-            //  - it runs off the critical animation frame (a short timeout), and
-            //  - rapid requests (autoplay, fast hovers) coalesce into the last one.
-            // `at` is where the light comes from, in % of the viewport (defaults to centre)
-            function setAmbient(work, delay = 50, at = [50, 50]) {
-                clearTimeout(ambientTimer);
-                ambientTimer = setTimeout(() => {
-                    if (!work) { ambientBg.style.opacity = '0'; return; }
-                    ambientBg.style.opacity = '1';
-                    const key = `${work.id}@${at}`;
-                    if (key === ambientKey) return;
-                    ambientKey = key;
-                    ambientFront ^= 1;
-                    ambientLayers[ambientFront].style.backgroundImage = glowFor(work, { at });
-                    ambientLayers[ambientFront].classList.add('on');
-                    ambientLayers[ambientFront ^ 1].classList.remove('on');
-                }, delay);
-            }
-            // On touch screens, the work currently centred on screen ({ work, at }), if any
-            let centredWork = null;
-            // What the room should be lit by when nothing is being hovered
-            const restoreAmbient = (delay) => {
-                if (carouselInView) setAmbient(carouselAmbient, delay);
-                else if (centredWork) setAmbient(centredWork.work, delay, centredWork.at);
-                else setAmbient(null, delay);
-            };
-
-            // ============ 1. 3D CYLINDER CAROUSEL ============
-            const carouselData = myGalleryData.filter((w) => w.featured);
-            const scene = document.getElementById('carousel-scene');
-            const viewport = document.getElementById('carousel-viewport');
-            const caption = document.getElementById('carousel-caption');
-            const totalCards = carouselData.length;
-            const theta = 360 / totalCards;
-            let activeIndex = 0;
-            const cards = [];
-
-            const wrapOffset = (offset) => {
-                if (offset > Math.floor(totalCards / 2)) offset -= totalCards;
-                if (offset < -Math.floor(totalCards / 2)) offset += totalCards;
-                return offset;
-            };
-            const frontIndex = () => ((activeIndex % totalCards) + totalCards) % totalCards;
-
-            carouselData.forEach((work, index) => {
-                const card = document.createElement('div');
-                card.className = 'carousel-card';
-                card.innerHTML = `
-                    <img src="${work.images[0].sm}" alt="${escapeHtml(work.title)}" draggable="false">
-                    <div class="carousel-overlay"></div>
-                    <div class="carousel-content">
-                        <p class="text-white/70 text-[10px] uppercase tracking-[0.3em] mb-2">${escapeHtml(roomOf(work).title)} · ${work.year}</p>
-                        <h2 class="text-white font-display text-3xl md:text-4xl italic mb-4 [text-shadow:0_2px_12px_rgba(0,0,0,.45)] text-center px-4">${escapeHtml(work.title)}</h2>
-                        <a href="${detailUrl(work)}" class="view-btn bg-white/90 text-black px-6 py-2.5 rounded-full text-sm font-medium hover:bg-white hover:scale-105 transition-transform shadow-xl">
-                            View Work
-                        </a>
-                    </div>
-                `;
-
-                card.addEventListener('click', (e) => {
-                    if (dragMoved) { e.preventDefault(); return; }
-                    if (index !== frontIndex()) {
-                        e.preventDefault();
-                        activeIndex += wrapOffset(index - frontIndex());
-                        updateCarousel();
-                    } else if (e.target.closest('.view-btn')) {
-                        e.preventDefault();
-                        goToWork(work, card.querySelector('img'));
-                    }
-                });
-
-                scene.appendChild(card);
-                cards.push(card);
-            });
-
-            function updateCarousel() {
-                const isMobile = window.innerWidth < 768;
-                const cardWidth = isMobile ? 240 : 300;
-                const spacingPadding = isMobile ? 120 : 300;
-                const radius = Math.round((cardWidth / 2) / Math.tan(Math.PI / totalCards)) + spacingPadding;
-                const front = frontIndex();
-
-                cards.forEach((card, i) => {
-                    card.style.transform = `rotateY(${i * theta}deg) translateZ(${radius}px)`;
-                    const absOffset = Math.abs(wrapOffset(i - front));
-                    const isFront = absOffset === 0;
-                    card.classList.toggle('active', isFront);
-                    card.style.opacity = isFront ? 1 : Math.max(0, 1 - absOffset * 0.3);
-                    card.setAttribute('aria-hidden', String(!isFront));
-                    card.querySelector('.view-btn').tabIndex = isFront ? 0 : -1;
-                });
-
-                const work = carouselData[front];
-                caption.textContent = `${front + 1} / ${totalCards} · ${work.title}`;
-                carouselAmbient = work;
-                // Let the 0.8s spin finish before the light changes, so the two never share frames
-                if (!hoveringFrame) restoreAmbient(700);
-
-                scene.style.transform = `translateZ(${-radius}px) rotateY(${activeIndex * -theta}deg)`;
-            }
-
-            const step = (dir) => { activeIndex += dir; updateCarousel(); };
-            document.getElementById('btn-prev').addEventListener('click', () => { step(-1); pauseAutoplay(); });
-            document.getElementById('btn-next').addEventListener('click', () => { step(1); pauseAutoplay(); });
-            viewport.addEventListener('keydown', (e) => {
-                if (e.key === 'ArrowLeft') { step(-1); pauseAutoplay(); }
-                if (e.key === 'ArrowRight') { step(1); pauseAutoplay(); }
-            });
-
-            // Pointer drag/swipe (mouse + touch)
-            let startX = 0, dragging = false, dragMoved = false;
-            viewport.addEventListener('pointerdown', (e) => {
-                startX = e.clientX; dragging = true; dragMoved = false;
-            });
-            window.addEventListener('pointermove', (e) => {
-                if (!dragging) return;
-                if (Math.abs(e.clientX - startX) > 8) { dragMoved = true; viewport.classList.add('dragging'); }
-            });
-            window.addEventListener('pointerup', (e) => {
-                if (!dragging) return;
-                dragging = false;
-                viewport.classList.remove('dragging');
-                const diff = startX - e.clientX;
-                if (Math.abs(diff) > 40) { step(diff > 0 ? 1 : -1); pauseAutoplay(); }
-                // Let the click that follows a drag see dragMoved, then reset it
-                setTimeout(() => { dragMoved = false; }, 0);
-            });
-            window.addEventListener('pointercancel', () => { dragging = false; viewport.classList.remove('dragging'); });
-
-            // Slow autoplay, paused on interaction or when off-screen
-            let autoplay = null, autoplayResume = null;
-            function startAutoplay() {
-                if (reduceMotion || autoplay) return;
-                autoplay = setInterval(() => step(1), 5000);
-            }
-            function stopAutoplay() { clearInterval(autoplay); autoplay = null; }
-            function pauseAutoplay() {
-                stopAutoplay();
-                clearTimeout(autoplayResume);
-                autoplayResume = setTimeout(() => { if (carouselInView) startAutoplay(); }, 12000);
-            }
-            viewport.addEventListener('mouseenter', stopAutoplay);
-            viewport.addEventListener('mouseleave', () => { if (carouselInView) startAutoplay(); });
-
-            new IntersectionObserver(([entry]) => {
-                carouselInView = entry.isIntersecting;
-                if (carouselInView) startAutoplay(); else stopAutoplay();
-                if (!hoveringFrame) restoreAmbient();
-            }, { threshold: 0.25 }).observe(viewport);
-
-            let resizeRaf;
-            window.addEventListener('resize', () => {
-                cancelAnimationFrame(resizeRaf);
-                resizeRaf = requestAnimationFrame(updateCarousel);
-            });
-
-            // ============ 2. ROOMS ============
-            const roomsEl = document.getElementById('rooms');
-            const roomLinks = document.getElementById('room-links');
-            let hoveringFrame = false;
-
-            galleryRooms.forEach((room) => {
-                const works = myGalleryData.filter((w) => w.room === room.id);
-                if (!works.length) return;
-
-                roomLinks.insertAdjacentHTML('beforeend', `
-                    <a href="#room-${room.id}" data-room="${room.id}" class="room-link shrink-0 text-[11px] font-semibold uppercase tracking-[0.2em] pb-1 transition-colors">
-                        <span class="opacity-60 mr-1">${room.numeral}</span> ${escapeHtml(room.title)}
-                    </a>`);
-
-                const section = document.createElement('section');
-                section.className = 'room pt-24 md:pt-32';
-                section.id = `room-${room.id}`;
-                section.innerHTML = `
-                    <header class="mb-14 md:mb-20 grid md:grid-cols-[auto,1fr] gap-x-10 gap-y-4 items-end">
-                        <div>
-                            <p class="text-[11px] font-semibold tracking-[0.35em] uppercase text-primary mb-3">Room ${room.numeral}</p>
-                            <h2 class="font-display text-4xl md:text-5xl italic leading-none">${escapeHtml(room.title)}</h2>
-                        </div>
-                        <div class="md:border-l md:pl-10 border-black/10 dark:border-white/10">
-                            <p class="font-light text-sm md:text-[15px] leading-relaxed text-text-secondary-light dark:text-text-secondary-dark max-w-md">${escapeHtml(room.intro)}</p>
-                            <p class="mt-3 text-[10px] uppercase tracking-[0.25em] text-text-secondary-light/70 dark:text-text-secondary-dark/70">${works.length} ${works.length === 1 ? 'work' : 'works'}</p>
-                        </div>
-                    </header>
-                    <div class="wall">
-                        ${works.map((work, i) => `
-                            <figure class="work" id="w-${work.id}" data-id="${work.id}" style="--d:${(i % 3) * 0.12}s">
-                                <a href="${detailUrl(work)}" class="block group" aria-label="${escapeHtml(work.title)}, ${escapeHtml(work.type)}">
-                                    <div class="frame">
-                                        <div class="mat">
-                                            <img src="${work.images[0].sm}" alt="${escapeHtml(work.title)}" width="540" height="720" loading="lazy" decoding="async"/>
-                                        </div>
-                                        <span class="heart-badge"><span class="material-symbols-outlined fill-icon text-[16px]">favorite</span></span>
-                                    </div>
-                                    <figcaption class="placard">
-                                        <h3 class="font-display text-lg md:text-xl italic leading-snug">${escapeHtml(work.title)}</h3>
-                                        <p class="mt-1 text-[10px] uppercase tracking-[0.18em] text-text-secondary-light dark:text-text-secondary-dark font-semibold">
-                                            ${escapeHtml(work.type)}${work.year ? ` · ${work.year}` : ''}
-                                        </p>
-                                        <p class="mt-1 text-[10px] uppercase tracking-[0.18em] text-text-secondary-light/70 dark:text-text-secondary-dark/70">
-                                            No. ${work.no}${work.images.length > 1 ? ` · ${work.images.length} views` : ''}
-                                        </p>
-                                    </figcaption>
-                                </a>
-                            </figure>
-                        `).join('')}
-                    </div>
-                `;
-                roomsEl.appendChild(section);
-            });
-
-            // ============ 2b. THE ARTIST ============
-            const artistName = artist.name || 'Orneril Studio';
-            const initials = artist.name
-                ? artist.name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase()
-                : 'O';
-
-            // Every vivid bead colour in the collection, in exhibition order
-            const collectionColours = [...new Set(myGalleryData.flatMap((w) => w.palette)
-                .filter((hex) => { const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)); return Math.max(...c) - Math.min(...c) > 46; }))];
-
-            // Without a photo, the portrait is a strand strung from the whole collection's palette
-            function beadPortrait() {
-                const beads = 38;
-                const svgBeads = Array.from({ length: beads }, (_, i) => {
-                    const t = (i / beads) * Math.PI * 2 - Math.PI / 2;
-                    const x = 150 + Math.cos(t) * 102;
-                    const y = 205 + Math.sin(t) * 140;
-                    const r = i % 5 === 0 ? 11 : i % 2 ? 8 : 9.5;
-                    const fill = collectionColours[(i * 7) % collectionColours.length];
-                    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${fill}"/>
-                            <circle cx="${(x - r / 3).toFixed(1)}" cy="${(y - r / 3).toFixed(1)}" r="${(r / 3).toFixed(1)}" fill="#fff" opacity=".45"/>`;
-                }).join('');
+        // ---------- Portal markup (shared by both layouts) ----------
+        const portalHref = (stop) => (stop.kind === 'maker' ? Artestoa.galleryUrl(stop.artist.slug) : '#exhibit');
+        function portalHtml(stop) {
+            if (stop.kind === 'maker') {
+                const a = stop.artist;
                 return `
-                    <svg viewBox="0 0 300 400" class="w-full h-full" role="img" aria-label="${escapeHtml(artistName)}, portrait in beads">
-                        
-                        <ellipse cx="150" cy="205" rx="102" ry="140" fill="none" stroke="#b9ad97" stroke-width="1"/>
-                        ${svgBeads}
-                        <text x="150" y="226" text-anchor="middle" font-family="Playfair Display, serif" font-style="italic" font-size="64" fill="#262626">${escapeHtml(initials)}</text>
-                    </svg>`;
+                    <a class="portal" id="${stop.id}" href="${portalHref(stop)}" data-stop="${stops.indexOf(stop)}" aria-label="Enter ${escapeHtml(a.name)}'s gallery">
+                        <div class="frame"><div class="mat"><img src="${a.cover.src}" alt="${escapeHtml(a.cover.title)}, by ${escapeHtml(a.name)}" draggable="false"/></div></div>
+                        <div class="plaque">
+                            <span class="block font-display italic text-[17px] leading-tight">${escapeHtml(a.name)}</span>
+                            <span class="block text-[9px] uppercase tracking-[0.2em] mt-0.5 opacity-80">${escapeHtml(a.craft)}</span>
+                        </div>
+                    </a>`;
             }
+            return `
+                <a class="portal open" id="${stop.id}" href="#exhibit" data-stop="${stops.indexOf(stop)}" aria-label="An open wall in the ${escapeHtml(stop.wing.title)} wing: exhibit here">
+                    <div class="frame"><div class="mat">
+                        <span class="plus"><span class="material-symbols-outlined text-[22px]">add</span></span>
+                        <span class="font-display italic text-[17px] leading-snug px-4">This wall is waiting</span>
+                        <span class="text-[9px] uppercase tracking-[0.2em] opacity-70 px-4">Your ${escapeHtml(stop.wing.title.toLowerCase())} here</span>
+                    </div></div>
+                    <div class="plaque"><span class="block text-[9px] uppercase tracking-[0.2em]">Open wall · Exhibit here</span></div>
+                </a>`;
+        }
+        const paletteOf = (stop) => (stop.kind === 'maker' ? stop.artist.palette : NEUTRAL);
 
-            document.getElementById('artist-portrait').innerHTML = artist.portrait
-                ? `<img src="${artist.portrait}" alt="Portrait of ${escapeHtml(artistName)}" class="w-full h-full object-cover" loading="lazy"/>`
-                : beadPortrait();
-            document.getElementById('artist-plaque-name').textContent = artist.portrait ? `Portrait of ${artistName}` : 'Portrait, in beads';
-            document.getElementById('artist-plaque-meta').textContent = artist.portrait ? 'Photograph' : `${collectionColours.length} colours from the collection`;
-            document.getElementById('artist-name').textContent = artistName;
-            // Until a name is set, describe the studio rather than a person
-            const roleLine = artist.name ? artist.role : 'Hand-strung jewellery';
-            document.getElementById('artist-role').textContent = [roleLine, artist.location].filter(Boolean).join(' · ');
-            if (artist.quote) {
-                const q = document.getElementById('artist-quote');
-                q.textContent = `“${artist.quote}”`;
-                q.hidden = false;
+        // ---------- Stepping through a portal ----------
+        function stepInto(stop, x, y) {
+            if (stop.kind !== 'maker') {
+                $('exhibit').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
+                return;
             }
-            document.getElementById('artist-bio').innerHTML = artist.bio.map((p) => `<p>${escapeHtml(p)}</p>`).join('');
-
-            const years = myGalleryData.map((w) => w.year).filter(Boolean);
-            document.getElementById('artist-facts').innerHTML = [
-                ['Working since', Math.min(...years)],
-                ['Works on view', myGalleryData.length],
-                ['Rooms', galleryRooms.length],
-            ].map(([label, value], i) => `
-                <div class="${i ? 'border-l border-black/10 dark:border-white/10 pl-4' : ''}">
-                    <dt class="text-[10px] uppercase tracking-wider text-text-secondary-light dark:text-text-secondary-dark mb-2">${label}</dt>
-                    <dd class="font-display text-2xl">${value}</dd>
-                </div>`).join('');
-
-            // Counted from the catalogue, most-used first; each one searches the collection
-            const materialTerms = ['crackle glass', 'hematite', 'howlite', 'onyx', 'jasper', 'lava stone', 'cowrie', 'wood', 'polymer clay', 'acrylic', 'glass pearls', 'turquoise'];
-            const materialCounts = materialTerms
-                .map((term) => [term, myGalleryData.filter((w) => w.materials.toLowerCase().includes(term)).length])
-                .filter(([, n]) => n > 0)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 8);
-            document.getElementById('artist-materials').innerHTML = materialCounts.map(([term, n]) => `
-                <button type="button" data-material="${term}" class="material-chip rounded-full px-3.5 py-1.5 text-xs capitalize">
-                    ${term} <span class="opacity-50 ml-1">${n}</span>
-                </button>`).join('');
-
-            document.getElementById('artist-links').innerHTML = artist.links.map((l) => `
-                <a href="${escapeHtml(l.href)}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-colors">
-                    ${escapeHtml(l.label)} <span class="material-symbols-outlined text-[16px]">north_east</span>
-                </a>`).join('');
-
-            document.getElementById('artist-works').innerHTML = myGalleryData.filter((w) => w.featured).map((w) => `
-                <a href="${detailUrl(w)}" class="artist-work group block">
-                    <span class="block overflow-hidden bg-black/5 shadow-md">
-                        <img src="${w.images[0].sm}" alt="${escapeHtml(w.title)}" class="w-full aspect-[3/4] object-cover" loading="lazy"/>
-                    </span>
-                    <span class="block mt-2 font-display italic text-sm truncate group-hover:text-primary transition-colors">${escapeHtml(w.title)}</span>
-                </a>`).join('');
-
-            // Reveal works as the visitor walks past them
-            const revealer = new IntersectionObserver((entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        const el = entry.target;
-                        el.classList.add('in-view');
-                        revealer.unobserve(el);
-                        // The stagger delay is for the entrance only; hover dimming should be instant
-                        el.addEventListener('transitionend', () => el.style.setProperty('--d', '0s'), { once: true });
-                    }
-                });
-            }, { rootMargin: '0px 0px -8% 0px', threshold: 0.1 });
-            document.querySelectorAll('.work').forEach((el) => revealer.observe(el));
-
-            // Spotlight + ambient on hover; view transition on click
-            let spotlight = null;
-            roomsEl.addEventListener('pointermove', (e) => {
-                const frame = e.target.closest('.frame');
-                if (!frame) return;
-                if (!spotlight) requestAnimationFrame(() => {
-                    const { frame, x, y } = spotlight;
-                    const r = frame.getBoundingClientRect();
-                    frame.style.setProperty('--mx', `${x - r.left}px`);
-                    frame.style.setProperty('--my', `${y - r.top}px`);
-                    spotlight = null;
-                });
-                spotlight = { frame, x: e.clientX, y: e.clientY };
-            });
-
-            // Suspend hover effects while scrolling (see .is-scrolling in the CSS)
-            let scrollIdle;
-            window.addEventListener('scroll', () => {
-                if (!document.body.classList.contains('is-scrolling')) {
-                    document.body.classList.add('is-scrolling');
-                    if (hoveringFrame) { hoveringFrame = false; restoreAmbient(); }
-                }
-                clearTimeout(scrollIdle);
-                scrollIdle = setTimeout(() => document.body.classList.remove('is-scrolling'), 150);
-            }, { passive: true });
-            roomsEl.addEventListener('mouseover', (e) => {
-                const fig = e.target.closest('.work');
-                if (!fig || fig.contains(e.relatedTarget)) return;
-                hoveringFrame = true;
-                // The light spills out from the piece itself
-                const r = fig.querySelector('.frame').getBoundingClientRect();
-                const at = [((r.left + r.width / 2) / innerWidth) * 100, ((r.top + r.height / 2) / innerHeight) * 100].map(Math.round);
-                setAmbient(findWork(fig.dataset.id), 50, at);
-            });
-            roomsEl.addEventListener('mouseout', (e) => {
-                const fig = e.target.closest('.work');
-                if (!fig || fig.contains(e.relatedTarget)) return;
-                hoveringFrame = false;
-                restoreAmbient();
-            });
-            roomsEl.addEventListener('click', (e) => {
-                const link = e.target.closest('.work a');
-                if (!link || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-                e.preventDefault();
-                const fig = link.closest('.work');
-                goToWork(findWork(fig.dataset.id), fig.querySelector('img'));
-            });
-
-            // Name the clicked image so the browser can morph it into the detail view
-            function goToWork(work, imgEl) {
-                document.querySelectorAll('[style*="view-transition-name"]').forEach((el) => (el.style.viewTransitionName = ''));
-                if (imgEl) imgEl.style.viewTransitionName = 'artwork';
-                window.location.href = detailUrl(work);
-            }
-
-            // Touch screens can't hover, so the piece passing through the middle of the
-            // screen lights the room instead. setAmbient's delay means this only repaints
-            // once the visitor pauses, not on every work that scrolls past.
-            if (window.matchMedia('(hover: none)').matches) {
-                const centred = new Set();
-                const focusSpy = new IntersectionObserver((entries) => {
-                    entries.forEach((e) => (e.isIntersecting ? centred.add(e.target) : centred.delete(e.target)));
-                    const fig = [...centred].pop();
-                    if (!fig) { centredWork = null; restoreAmbient(600); return; }
-                    const r = fig.querySelector('.frame').getBoundingClientRect();
-                    const at = [((r.left + r.width / 2) / innerWidth) * 100, ((r.top + r.height / 2) / innerHeight) * 100].map(Math.round);
-                    centredWork = { work: findWork(fig.dataset.id), at };
-                    restoreAmbient(300);
-                }, { rootMargin: '-38% 0px -38% 0px' });
-                roomsEl.querySelectorAll('.work').forEach((el) => focusSpy.observe(el));
-            }
-
-            // Highlight the current room in the nav
-            roomLinks.insertAdjacentHTML('beforeend', `
-                <a href="#room-artist" data-room="artist" class="room-link shrink-0 text-[11px] font-semibold uppercase tracking-[0.2em] pb-1 transition-colors">
-                    <span class="material-symbols-outlined text-[14px] align-[-2px] opacity-60 mr-1">person</span> The Artist
-                </a>`);
-
-            const roomSpy = new IntersectionObserver((entries) => {
-                entries.forEach((entry) => {
-                    if (!entry.isIntersecting) return;
-                    const link = roomLinks.querySelector(`[data-room="${entry.target.id.replace('room-', '')}"]`);
-                    roomLinks.querySelectorAll('.room-link').forEach((a) => a.classList.toggle('active', a === link));
-                    // Keep the active room visible in the scrollable nav on narrow screens
-                    roomLinks.scrollTo({ left: link.offsetLeft - roomLinks.clientWidth / 2 + link.offsetWidth / 2, behavior: reduceMotion ? 'auto' : 'smooth' });
-                });
-            }, { rootMargin: '-45% 0px -50% 0px' });
-            document.querySelectorAll('.room').forEach((room) => roomSpy.observe(room));
-
-            // ============ 3. FAVOURITES ============
-            function syncFavourites() {
-                const favs = readFavs();
-                document.querySelectorAll('.work').forEach((el) => el.classList.toggle('is-fav', favs.includes(el.dataset.id)));
-                const badge = document.getElementById('saved-count');
-                badge.textContent = favs.length;
-                badge.classList.toggle('hidden', favs.length === 0);
-                document.getElementById('saved-summary').textContent = favs.length
-                    ? `You've saved ${favs.length} ${favs.length === 1 ? 'piece' : 'pieces'} on this visit. Find them under the heart in the dock.`
-                    : 'Tap the heart on any piece to save it for later.';
-            }
-            syncFavourites();
-            window.addEventListener('storage', syncFavourites);
-            // Returning via the back button restores this page from bfcache; refresh state
-            window.addEventListener('pageshow', (e) => { if (e.persisted) { syncFavourites(); restoreAmbient(); } });
-
-            // ============ 4. DOCK & SHEET ============
-            const sheet = document.getElementById('sheet');
-            const sheetTitle = document.getElementById('sheet-title');
-            const sheetList = document.getElementById('sheet-list');
-            const searchWrap = document.getElementById('search-wrap');
-            const searchInput = document.getElementById('search-input');
-            let lastFocus = null;
-
-            const listItem = (work) => `
-                <li>
-                    <a href="${detailUrl(work)}" class="flex items-center gap-4 p-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                        <img src="${work.images[0].sm}" alt="" class="w-14 h-[72px] object-cover rounded-md shadow" loading="lazy"/>
-                        <span class="flex-1 min-w-0">
-                            <span class="block font-display text-lg italic truncate">${escapeHtml(work.title)}</span>
-                            <span class="block text-[10px] uppercase tracking-[0.18em] text-text-secondary-light dark:text-text-secondary-dark">
-                                Room ${roomOf(work).numeral} · ${escapeHtml(work.type)}${work.year ? ` · ${work.year}` : ''}
-                            </span>
-                        </span>
-                        <span class="material-symbols-outlined text-text-secondary-light dark:text-text-secondary-dark">arrow_forward</span>
-                    </a>
-                </li>`;
-            const emptyItem = (msg) => `<li class="px-3 py-10 text-center text-sm text-text-secondary-light dark:text-text-secondary-dark">${msg}</li>`;
-
-            function renderSearch() {
-                const q = searchInput.value.trim().toLowerCase();
-                const results = myGalleryData.filter((w) =>
-                    !q || [w.title, w.type, w.materials, w.description, w.series, roomOf(w).title, w.year]
-                        .filter(Boolean).join(' ').toLowerCase().includes(q));
-                sheetList.innerHTML = results.length ? results.map(listItem).join('') : emptyItem(`Nothing in the collection matches “${escapeHtml(q)}”.`);
-            }
-
-            function openSheet(kind) {
-                lastFocus = document.activeElement;
-                sheet.hidden = false;
-                document.body.style.overflow = 'hidden';
-                if (kind === 'search') {
-                    sheetTitle.textContent = 'Search the collection';
-                    searchWrap.hidden = false;
-                    renderSearch();
-                    searchInput.focus();
-                } else {
-                    sheetTitle.textContent = 'Saved works';
-                    searchWrap.hidden = true;
-                    const favs = readFavs().map(findWork).filter(Boolean);
-                    sheetList.innerHTML = favs.length ? favs.map(listItem).join('') : emptyItem('Nothing saved yet. Open any piece and tap the heart to keep it here.');
-                    sheet.querySelector('[data-close]:not(.absolute)').focus();
-                }
-            }
-            function closeSheet() {
-                sheet.hidden = true;
-                document.body.style.overflow = '';
-                lastFocus?.focus();
-            }
-
-            searchInput.addEventListener('input', renderSearch);
-            sheet.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) closeSheet(); });
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && !sheet.hidden) closeSheet();
-                if (e.key === '/' && sheet.hidden && !/input|textarea/i.test(document.activeElement.tagName)) {
-                    e.preventDefault(); openSheet('search');
-                }
-            });
-
-            document.getElementById('artist-materials').addEventListener('click', (e) => {
-                const chip = e.target.closest('[data-material]');
-                if (!chip) return;
-                openSheet('search');
-                searchInput.value = chip.dataset.material;
-                renderSearch();
-            });
-
-            document.querySelectorAll('[data-dock]').forEach((btn) => btn.addEventListener('click', () => {
-                const kind = btn.dataset.dock;
-                if (kind === 'rooms') document.getElementById('rooms').scrollIntoView();
-                else if (kind === 'artist') document.getElementById('room-artist').scrollIntoView();
-                else openSheet(kind);
-            }));
-
-            // ============ 5. ARRIVALS ============
-            // Coming back from a work (index.html#w-<id>): mark where the visitor was standing
-            // Arriving with a #hash: the rooms above it are built by script, after the browser's
-            // own anchor jump, so jump again now and once styles/fonts have settled the layout.
-            // Coming back from a work (#w-<id>) also marks where the visitor was standing.
-            function markVisited() {
-                const target = location.hash.length > 1 && document.getElementById(decodeURIComponent(location.hash.slice(1)));
-                if (!target) return;
-                const isWork = target.classList.contains('work');
-                const jump = () => target.scrollIntoView({ block: isWork ? 'center' : 'start', behavior: 'instant' });
-                jump();
-                if (document.readyState !== 'complete') window.addEventListener('load', jump, { once: true });
-                if (isWork) {
-                    target.classList.add('in-view', 'just-visited');
-                    setTimeout(() => target.classList.remove('just-visited'), 2600);
-                }
-            }
-
-            updateCarousel();
-            startAutoplay();
-            markVisited();
+            const veil = $('veil');
+            const at = [Math.round((x / innerWidth) * 100), Math.round((y / innerHeight) * 100)];
+            const bg = `${glowFor({ palette: stop.artist.palette }, { alpha: 1, at })}, var(--bg)`;
+            veil.style.setProperty('--vx', `${x}px`);
+            veil.style.setProperty('--vy', `${y}px`);
+            veil.style.background = bg;
+            // The gallery opens out of the same colours
+            try { sessionStorage.setItem('artestoa:arrival', glowFor({ palette: stop.artist.palette }, { alpha: 1 })); } catch {}
+            veil.classList.add('open');
+            setTimeout(() => (location.href = portalHref(stop)), reduceMotion ? 0 : 560);
+        }
+        document.addEventListener('click', (e) => {
+            const el = e.target.closest('.portal');
+            if (!el || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+            e.preventDefault();
+            stepInto(stops[Number(el.dataset.stop)], e.clientX || innerWidth / 2, e.clientY || innerHeight / 2);
         });
+        // Coming back with the browser's back button: lift the veil
+        addEventListener('pageshow', () => $('veil').classList.remove('open'));
+
+        // ---------- Focus: the portal you're facing ----------
+        let focused = null;
+        function describe(stop) {
+            if (!stop) return '';
+            if (stop.kind === 'maker') {
+                const a = stop.artist;
+                return `
+                    <p class="text-[10px] uppercase tracking-[0.3em] opacity-75 mb-1">Wing ${stop.wing.numeral} · ${escapeHtml(stop.wing.title)}</p>
+                    <p class="font-display italic text-3xl leading-tight">${escapeHtml(a.name)}</p>
+                    <p class="text-[11px] uppercase tracking-[0.2em] opacity-80 mt-1">${escapeHtml([a.craft, a.location].filter(Boolean).join(' · '))}</p>
+                    <p class="text-sm font-light opacity-90 mt-2">${a.works} works · since ${a.since}</p>
+                    <a href="${portalHref(stop)}" data-enter class="mt-4 inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-5 py-2.5 rounded-full text-sm font-medium hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-colors">
+                        Step inside <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </a>`;
+            }
+            return `
+                <p class="text-[10px] uppercase tracking-[0.3em] opacity-75 mb-1">Wing ${stop.wing.numeral} · ${escapeHtml(stop.wing.title)}</p>
+                <p class="font-display italic text-2xl leading-tight">This wall is waiting</p>
+                <p class="text-sm font-light opacity-90 mt-2">Make ${escapeHtml(stop.wing.title.toLowerCase())} by hand? This frame could open into your own gallery.</p>
+                <a href="#exhibit" data-enter class="mt-4 inline-flex items-center gap-2 border border-current px-5 py-2.5 rounded-full text-sm font-medium hover:text-primary transition-colors">
+                    Exhibit here <span class="material-symbols-outlined text-[18px]">add</span>
+                </a>`;
+        }
+        $('focus-card').addEventListener('click', (e) => {
+            if (!e.target.closest('[data-enter]') || !focused) return;
+            e.preventDefault();
+            stepInto(focused, e.clientX, e.clientY);
+        });
+
+        // ================= 3D CORRIDOR =================
+        const SURFACE_SCALE = 4;
+        const corridor = $('corridor');
+        const scene = $('scene');
+        const world = $('world');
+        const glow = $('hall-glow');
+        let layout = null;      // geometry of the current build
+        let t = 0;              // how far the visitor has walked, px
+        let raf = 0;
+
+        function build3d() {
+            const H = innerHeight;
+            const W = Math.min(Math.max(innerWidth * 0.95, 900), 1300);
+            const PW = Math.round(Math.min(260, H * 0.3));       // portal width
+            const START = 900, BANNER_GAP = 520, SPACING = 430, END = 900;
+
+            // Lay stops out along the hall (z goes negative = further away)
+            let z = -START, side = 0;
+            const placed = stops.map((stop) => {
+                if (stop.kind === 'banner') { z -= 120; const s = { stop, z }; z -= BANNER_GAP - 120; return s; }
+                const s = { stop, z, side: side++ % 2 === 0 ? 'left' : 'right' };
+                z -= SPACING;
+                return s;
+            });
+            const L = -z + END;            // length of the hall
+            const travel = L - 900;        // the walk stops a little before the back wall
+
+            const surf = (cls, w, h, transform, extra = '') =>
+                `<div class="${cls}" style="width:${w / SURFACE_SCALE}px;height:${h / SURFACE_SCALE}px;transform:${transform} scale(${SURFACE_SCALE});${extra}"></div>`;
+
+            let html = '';
+            html += surf('floor', W, L, `translate3d(${-W / 2}px, ${H / 2}px, 0) rotateX(-90deg)`);
+            html += surf('ceiling', W, L, `translate3d(${-W / 2}px, ${-H / 2}px, 0) rotateX(-90deg)`);
+            html += surf('wall', L, H, `translate3d(${-W / 2}px, ${-H / 2}px, 0) rotateY(90deg)`);
+            html += surf('wall', L, H, `translate3d(${W / 2}px, ${-H / 2}px, 0) rotateY(90deg)`);
+
+            // Ceiling lights down the middle of the hall
+            for (let lz = -400; lz > -L + 300; lz -= 520) {
+                html += `<div class="ceiling-light" style="width:140px;height:26px;transform:translate3d(-70px, ${-H / 2 + 1}px, ${lz}px) rotateX(-90deg)"></div>`;
+            }
+
+            placed.forEach((p) => {
+                if (p.stop.kind === 'banner') {
+                    const w = p.stop.wing;
+                    html += `<div class="banner" data-z="${p.z}" style="width:560px;height:130px;transform:translate3d(-280px, ${-H / 2 + 24}px, ${p.z}px)">
+                        <span class="text-[11px] uppercase tracking-[0.4em] opacity-70">Wing ${w.numeral}</span>
+                        <span class="font-display italic text-4xl mt-1">${escapeHtml(w.title)}</span>
+                        <span class="text-[11px] opacity-70 mt-1">${escapeHtml(w.blurb)}</span>
+                    </div>`;
+                    return;
+                }
+                const left = p.side === 'left';
+                const x = left ? -W / 2 + 4 : W / 2 - 4 - PW;
+                const y = -PW * 0.78;
+                // Portals hang on panels that swing out from the wall, like doors left ajar
+                const turn = left ? 56 : -56;
+                const origin = left ? '0 50%' : '100% 50%';
+                html += `<div class="floor-pool" style="width:${PW * 1.8}px;height:${PW * 1.4}px;transform:translate3d(${left ? -W / 2 + 10 : W / 2 - 10 - PW * 1.8}px, ${H / 2 - 1}px, ${p.z + PW * 0.2}px) rotateX(-90deg)"></div>`;
+                html += `<div class="portal-slot" data-z="${p.z}" style="width:${PW}px;transform-origin:${origin};transform:translate3d(${x}px, ${y}px, ${p.z}px) rotateY(${turn}deg)">${portalHtml(p.stop)}</div>`;
+            });
+
+            // The back wall: the end of the hall, for now
+            html += `<div class="back-wall" style="width:${W}px;height:${H}px;transform:translate3d(${-W / 2}px, ${-H / 2}px, ${-L}px)">
+                <p class="text-[11px] uppercase tracking-[0.4em] opacity-60">The hall continues</p>
+                <p class="font-display italic text-5xl mt-3">More doors are coming</p>
+                <a href="#exhibit" class="mt-6 inline-flex items-center gap-2 border border-current px-5 py-2.5 rounded-full text-sm">Hang yours here <span class="material-symbols-outlined text-[18px]">add</span></a>
+            </div>`;
+
+            world.innerHTML = html;
+            corridor.style.height = `${travel + H}px`;
+            layout = {
+                H, travel, placed,
+                slots: [...world.querySelectorAll('.portal-slot, .banner')],
+            };
+
+            // Wing markers on the right edge
+            $('wing-dots').innerHTML = wings.map((w) => `<button class="wing-dot" data-wing="${w.id}" aria-label="Walk to the ${escapeHtml(w.title)} wing" title="${escapeHtml(w.title)}"></button>`).join('');
+        }
+
+        // Scroll position for standing `ahead` px in front of a stop
+        const scrollFor = (stop, ahead = 620) => {
+            const p = layout.placed.find((q) => q.stop === stop);
+            return corridor.offsetTop + Math.max(0, Math.min(layout.travel, -p.z - ahead));
+        };
+
+        function render3d() {
+            raf = 0;
+            if (!layout) return;
+            t = Math.max(0, Math.min(layout.travel, scrollY - corridor.offsetTop));
+            world.style.transform = `translate3d(0, 0, ${t}px)`;
+
+            // Fade things in out of the far gloom, and fade banners as you pass under them
+            layout.slots.forEach((el) => {
+                const d = -(Number(el.dataset.z) + t);
+                let o = 1 - Math.max(0, d - 1500) / 2200;
+                if (el.classList.contains('banner')) o = Math.min(o, Math.max(0, (d - 120) / 260));
+                el.style.opacity = Math.max(0, Math.min(1, o)).toFixed(2);
+            });
+
+            // Hero hangs at the far end on arrival, then gives way as you walk
+            $('hall-hero').style.opacity = Math.max(0, 1 - t / 380).toFixed(2);
+            $('hero-scrim').style.opacity = Math.max(0, 1 - t / 380).toFixed(2);
+            $('hall-hero').style.visibility = t > 380 ? 'hidden' : 'visible';
+
+            // The portal you're facing: the nearest one not yet passed
+            let best = null, bestD = Infinity;
+            layout.placed.forEach((p) => {
+                if (p.stop.kind === 'banner') return;
+                const d = -(p.z + t);
+                if (d > 260 && d < bestD) { best = p; bestD = d; }
+            });
+            setFocus(t < 160 ? null : best?.stop || null, best);
+
+            // Wing you're in
+            const wingStop = [...layout.placed].reverse().find((p) => p.stop.kind === 'banner' && -(p.z + t) < 700);
+            const wing = wingStop?.stop.wing;
+            $('hud-wing').textContent = wing ? `Wing ${wing.numeral} · ${wing.title}` : '';
+            document.querySelectorAll('.wing-dot').forEach((d) => d.classList.toggle('active', d.dataset.wing === wing?.id));
+        }
+        const schedule = () => { if (!raf) raf = requestAnimationFrame(render3d); };
+
+        let glowTimer;
+        function setFocus(stop, placed) {
+            if (stop === focused) return;
+            document.querySelectorAll('.portal.lit').forEach((el) => el.classList.remove('lit'));
+            focused = stop;
+            const card = $('focus-card');
+            if (!stop) {
+                card.classList.add('hidden-card');
+                glow.classList.remove('on');
+                return;
+            }
+            card.innerHTML = describe(stop);
+            card.classList.remove('hidden-card');
+            const el = $(stop.id);
+            const [r, g, b] = Artestoa.rgb(Artestoa.vivid(paletteOf(stop))[0] || paletteOf(stop)[0]);
+            el.style.setProperty('--lit', `rgba(${r},${g},${b},.45)`);
+            el.classList.add('lit');
+            // Light comes from the side the portal hangs on; repainted only when focus changes,
+            // and after a short pause so walking briskly past several portals stays smooth
+            clearTimeout(glowTimer);
+            glowTimer = setTimeout(() => {
+                glow.style.background = glowFor({ palette: paletteOf(stop) }, { at: [placed.side === 'left' ? 18 : 82, 50] });
+                glow.classList.add('on');
+            }, 120);
+        }
+
+        // ================= FLAT WALK =================
+        function buildFlat() {
+            let html = '';
+            wings.forEach((wing) => {
+                html += `<header class="pt-20 pb-8 text-center">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.35em] text-primary">Wing ${wing.numeral}</p>
+                    <h2 class="font-display italic text-4xl mt-2">${escapeHtml(wing.title)}</h2>
+                    <p class="text-sm font-light opacity-70 mt-2">${escapeHtml(wing.blurb)}</p>
+                </header>`;
+                stops.filter((s) => s.wing === wing && s.kind !== 'banner').forEach((stop, i) => {
+                    html += `<div class="flat-portal ${i % 2 ? 'right ml-auto' : 'left'} w-[62%] mb-14">${portalHtml(stop)}</div>`;
+                });
+            });
+            html += `<p class="text-center font-display italic text-2xl opacity-70 pt-6">More doors are coming.</p>`;
+            $('walk').innerHTML = html;
+
+            // The portal in the middle of the screen lights the hall
+            const ambient = $('flat-ambient');
+            const centred = new Set();
+            let timer;
+            const spy = new IntersectionObserver((entries) => {
+                entries.forEach((e) => (e.isIntersecting ? centred.add(e.target) : centred.delete(e.target)));
+                document.querySelectorAll('.flat-portal.lit').forEach((el) => el.classList.remove('lit'));
+                const el = [...centred].pop();
+                clearTimeout(timer);
+                if (!el) { ambient.classList.remove('on'); return; }
+                el.classList.add('lit');
+                const stop = stops[Number(el.querySelector('.portal').dataset.stop)];
+                timer = setTimeout(() => {
+                    ambient.style.background = glowFor({ palette: paletteOf(stop) });
+                    ambient.classList.add('on');
+                }, 250);
+            }, { rootMargin: '-40% 0px -40% 0px' });
+            document.querySelectorAll('.flat-portal').forEach((el) => spy.observe(el));
+        }
+
+        // ================= MODE =================
+        let mode = null;
+        const wants3d = () => innerWidth >= 900 && !reduceMotion && CSS.supports('transform-style', 'preserve-3d');
+        const hero = $('hall-hero');
+
+        function setMode() {
+            const next = wants3d() ? '3d' : 'flat';
+            if (next === mode) { if (mode === '3d') { build3d(); render3d(); } return; }
+            mode = next;
+            corridor.hidden = mode !== '3d';
+            $('walk').hidden = mode !== 'flat';
+            if (mode === '3d') {
+                // Hero sits over the vanishing point
+                hero.className = 'absolute inset-x-0 top-[18vh] text-center px-6 pointer-events-auto';
+                $('hud').prepend(hero);
+                build3d();
+                render3d();
+            } else {
+                hero.className = 'min-h-[88vh] flex flex-col items-center justify-center text-center px-6';
+                hero.style.opacity = '';
+                hero.style.visibility = '';
+                document.body.prepend(hero);
+                buildFlat();
+            }
+        }
+
+        addEventListener('scroll', () => { if (mode === '3d') schedule(); }, { passive: true });
+        let resizeRaf;
+        addEventListener('resize', () => { cancelAnimationFrame(resizeRaf); resizeRaf = requestAnimationFrame(setMode); });
+
+        // Walking with the keyboard
+        addEventListener('keydown', (e) => {
+            if (mode !== '3d' || !$('sheet').hidden || /input|textarea/i.test(document.activeElement.tagName)) return;
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const ahead = portals.filter((p) => (e.key === 'ArrowDown' ? p !== focused && scrollFor(p) > scrollY + 4 : scrollFor(p) < scrollY - 4));
+                const target = e.key === 'ArrowDown' ? ahead[0] : ahead[ahead.length - 1];
+                scrollTo({ top: target ? scrollFor(target) : (e.key === 'ArrowDown' ? $('exhibit').offsetTop : corridor.offsetTop), behavior: 'smooth' });
+            }
+            if (e.key === 'Enter' && focused && document.activeElement === document.body) stepInto(focused, innerWidth / 2, innerHeight / 2);
+        });
+
+        $('wing-dots').addEventListener('click', (e) => {
+            const dot = e.target.closest('[data-wing]');
+            if (dot) walkToWing(dot.dataset.wing);
+        });
+        function walkToWing(id) {
+            const banner = stops.find((s) => s.kind === 'banner' && s.wing.id === id);
+            if (mode === '3d') scrollTo({ top: scrollFor(banner, 420), behavior: reduceMotion ? 'auto' : 'smooth' });
+            else document.querySelectorAll('#walk header')[wings.findIndex((w) => w.id === id)]?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
+        }
+
+        $('enter-hall').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (mode === '3d') scrollTo({ top: scrollFor(portals[0]), behavior: 'smooth' });
+            else $('walk').scrollIntoView({ behavior: 'smooth' });
+        });
+        $('hud-mark').addEventListener('click', (e) => { e.preventDefault(); scrollTo({ top: 0, behavior: 'smooth' }); });
+
+        // ================= EXHIBIT =================
+        const { email, signupUrl } = artestoa.contact;
+        const actions = [];
+        if (signupUrl) actions.push(`<a href="${escapeHtml(signupUrl)}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-full text-sm font-medium hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-colors shadow-lg">Apply to exhibit <span class="material-symbols-outlined text-[18px]">north_east</span></a>`);
+        if (email) actions.push(`<a href="mailto:${escapeHtml(email)}?subject=${encodeURIComponent('Exhibiting at Artestoa')}" class="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium border border-current hover:text-primary transition-colors">Contact the curator <span class="material-symbols-outlined text-[18px]">mail</span></a>`);
+        $('exhibit-actions').innerHTML = actions.length
+            ? actions.join('')
+            : `<p class="text-sm opacity-70 text-center">Applications open soon. In the meantime, ask whoever shared Artestoa with you.</p>`;
+
+        // ================= DOCK & SHEET =================
+        const sheet = $('sheet');
+        const sheetList = $('sheet-list');
+        let lastFocus = null;
+        function openSheet(title, html) {
+            lastFocus = document.activeElement;
+            $('sheet-title').textContent = title;
+            sheetList.innerHTML = html;
+            sheet.hidden = false;
+            document.body.style.overflow = 'hidden';
+            sheet.querySelector('[data-close]:not(.absolute)').focus();
+        }
+        function closeSheet() {
+            sheet.hidden = true;
+            document.body.style.overflow = '';
+            lastFocus?.focus();
+        }
+        sheet.addEventListener('click', (e) => {
+            if (e.target.closest('[data-close]')) return closeSheet();
+            const w = e.target.closest('[data-goto-wing]');
+            if (w) { e.preventDefault(); closeSheet(); walkToWing(w.dataset.gotoWing); }
+        });
+        addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheet.hidden) closeSheet(); });
+
+        const row = (href, img, title, meta, attrs = '') => `
+            <li><a href="${href}" ${attrs} class="flex items-center gap-4 p-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                ${img}
+                <span class="flex-1 min-w-0">
+                    <span class="block font-display text-lg italic truncate">${title}</span>
+                    <span class="block text-[10px] uppercase tracking-[0.18em] opacity-70">${meta}</span>
+                </span>
+                <span class="material-symbols-outlined opacity-60">arrow_forward</span>
+            </a></li>`;
+
+        document.querySelectorAll('[data-dock]').forEach((btn) => btn.addEventListener('click', async () => {
+            const kind = btn.dataset.dock;
+            if (kind === 'exhibit') return $('exhibit').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
+            if (kind === 'wings') {
+                return openSheet('Wings of the hall', wings.map((w) => row('#', `<span class="w-12 h-12 rounded-full border border-current flex items-center justify-center font-display italic">${w.numeral}</span>`,
+                    escapeHtml(w.title),
+                    `${w.makers.length} ${w.makers.length === 1 ? 'maker' : 'makers'} · ${w.openWalls} open ${w.openWalls === 1 ? 'wall' : 'walls'}`,
+                    `data-goto-wing="${w.id}"`)).join(''));
+            }
+            openSheet('Saved works', '');
+            const works = await Artestoa.savedWorks();
+            sheetList.innerHTML = works.length
+                ? works.map((w) => row(Artestoa.workUrl(w), `<img src="${w.images[0].sm}" alt="" class="w-14 h-[72px] object-cover rounded-md shadow" loading="lazy"/>`,
+                    escapeHtml(w.title), `${escapeHtml(Artestoa.registryEntry(w.artist)?.name || '')} · ${escapeHtml(w.type)}`)).join('')
+                : `<li class="px-3 py-10 text-center text-sm opacity-70">Nothing saved yet. Step into a gallery and tap the heart on any piece.</li>`;
+        }));
+
+        function syncSaved() {
+            const n = Artestoa.readSaved().length;
+            $('saved-count').textContent = n;
+            $('saved-count').classList.toggle('hidden', n === 0);
+        }
+
+        // ================= START =================
+        setMode();
+        syncSaved();
+        addEventListener('pageshow', syncSaved);
+        addEventListener('storage', syncSaved);
+
+        // Arriving at index.html#portal-<slug> (back from a gallery): stand in front of that portal
+        function arrive() {
+            const stop = portals.find((p) => `#${p.id}` === location.hash);
+            if (location.hash === '#exhibit') return $('exhibit').scrollIntoView();
+            if (!stop) return;
+            if (mode === '3d') { scrollTo({ top: scrollFor(stop), behavior: 'instant' }); render3d(); }
+            else $(stop.id)?.scrollIntoView({ block: 'center', behavior: 'instant' });
+        }
+        arrive();
+        if (document.readyState !== 'complete') addEventListener('load', arrive, { once: true });
+    })();
     </script>
 </body>
 </html>

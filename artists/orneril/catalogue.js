@@ -1,11 +1,17 @@
 /*
- * Orneril — exhibition catalogue.
+ * Orneril: exhibition catalogue (an Artestoa gallery).
+ *
+ * This file is also the template for adding a maker. It registers itself with
+ * Artestoa.registerCatalogue(slug, { gallery, theme, artist, rooms, works }).
  *
  * Each "work" is one piece (or one matched set). `images[0]` is the hero shot;
- * every image has a full-size `src` (~1800px) and a grid thumbnail `sm` (~720px).
- * `palette` holds the bead colours; it drives the coloured ambient light (glowFor).
- * Rooms are the exhibition's sections; each work belongs to exactly one room.
+ * every image has a full-size `src` (~1800px) and a grid thumbnail `sm` (~720px),
+ * with paths relative to this folder. `palette` holds the piece's colours; it drives
+ * the coloured ambient light. Rooms are the gallery's sections; each work belongs
+ * to exactly one room. Everything is wrapped in a function so several catalogues
+ * can be loaded on one page without their helpers colliding.
  */
+(() => {
 
 const img = (slug, n) => ({
     src: `images/works/${slug}/${n}.jpg`,
@@ -13,11 +19,11 @@ const img = (slug, n) => ({
 });
 const shots = (slug, count) => Array.from({ length: count }, (_, i) => img(slug, i + 1));
 const archive = (n) => ({
-    src: `orneril_images/img_${n}.jpeg`,
-    sm: `orneril_images/img_${n}.jpeg`,
+    src: `images/archive/img_${n}.jpeg`,
+    sm: `images/archive/img_${n}.jpeg`,
 });
 
-const galleryRooms = [
+const rooms = [
     {
         id: "necklaces",
         numeral: "I",
@@ -50,7 +56,7 @@ const galleryRooms = [
     },
 ];
 
-const myGalleryData = [
+const works = [
     // ---------- Room I — Necklaces ----------
     {
         id: "terravine",
@@ -347,34 +353,6 @@ const myGalleryData = [
     })),
 ];
 
-// Catalogue numbers follow exhibition order: No. 01, 02, …
-myGalleryData.forEach((work, i) => (work.no = String(i + 1).padStart(2, "0")));
-
-const findWork = (id) => myGalleryData.find((w) => w.id === id);
-
-/*
- * Coloured light for a work, built from its bead palette (not the photo, whose
- * white backdrop averages to grey). Near-black/white tones carry no hue, so the
- * vivid colours lead; fully monochrome pieces get a faint neutral glow instead.
- * `at` is where the light comes from, in % of the layer: [x, y].
- */
-function glowFor(work, { alpha = 0.9, at = [50, 50] } = {}) {
-    const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-    const chroma = (hex) => { const c = rgb(hex); return (Math.max(...c) - Math.min(...c)) / 255; };
-    const vivid = work.palette.filter((c) => chroma(c) > 0.18);
-    const colours = (vivid.length ? vivid : work.palette).slice(0, 3);
-    const a = vivid.length ? alpha : alpha * 0.35;
-    const rgba = (hex, k) => `rgba(${rgb(hex).join(",")}, ${(a * k).toFixed(2)})`;
-    const [x, y] = at;
-    // Each colour sits just off the source, so they overlap and mix like light through glass
-    const offsets = [[-12, -8], [12, -4], [0, 12]];
-    const blooms = colours.map((hex, i) =>
-        `radial-gradient(38% 34% at ${x + offsets[i][0]}% ${y + offsets[i][1]}%, ${rgba(hex, 1)} 0%, transparent 75%)`);
-    // ...over a wide wash of the leading colour that reaches the edges of the room
-    const wash = `radial-gradient(95% 85% at ${x}% ${y}%, ${rgba(colours[0], 0.5)} 0%, transparent 85%)`;
-    return [...blooms, wash].join(", ");
-}
-
 /*
  * The artist. Fill these in: anything left empty is simply not shown
  * (an empty `portrait` shows a monogram; an empty `name` falls back to the studio).
@@ -383,7 +361,7 @@ const artist = {
     name: "",                 // e.g. "Ada Okafor"
     role: "Bead artist · Founder of Orneril",
     location: "",             // e.g. "Lagos, Nigeria"
-    portrait: "",             // e.g. "images/artist.jpg" (portrait orientation works best)
+    portrait: "",             // e.g. "images/artist.jpg", relative to this folder (portrait orientation works best)
     quote: "",                // a line in the artist's own words
     bio: [
         "Orneril began with a single strand and a habit of sorting beads by colour. Every piece since has been designed, strung and finished entirely by hand, one bead at a time.",
@@ -393,5 +371,23 @@ const artist = {
         // { label: "Instagram", href: "https://instagram.com/…" },
         // { label: "Email", href: "mailto:…" },
     ],
+    // Shown as "Signature materials", counted across the works' `materials`
+    materials: ["crackle glass", "hematite", "howlite", "onyx", "jasper", "lava stone", "cowrie", "wood", "polymer clay", "acrylic", "glass pearls", "turquoise"],
 };
 
+Artestoa.registerCatalogue("orneril", {
+    gallery: {
+        title: "Orneril",
+        kicker: "A Digital Exhibition • Handcrafted Beadwork",
+        intro: "Stone, glass, wood and shell, strung one bead at a time. Walk the rooms, step close to any piece, and look for the small stories hidden in its charms.",
+        exit: "Orneril is a small studio making jewellery entirely by hand: necklaces, bracelets, sets and phone lanyards, each one designed around a single palette or story. Every piece in this exhibition was strung, finished and photographed in the studio between 2023 and 2025.",
+        // Rooms left out of the guided tour
+        tourSkips: ["archive"],
+    },
+    theme: { accent: "#6B8E23" },
+    artist,
+    rooms,
+    works,
+});
+
+})();
