@@ -295,10 +295,12 @@
         }
         .ambient-layer.on { opacity: 1; }
 
-        /* ---------- Arriving through a portal in the hall ---------- */
-        #arrival { position: fixed; inset: 0; z-index: 100; pointer-events: none; opacity: 0; }
-        #arrival.show { opacity: 1; }
-        #arrival.show.fade { opacity: 0; transition: opacity 1.1s ease .1s; }
+        /* ---------- Arriving through a portal in the hall ----------
+           The page waits behind the wormhole, then eases in as the tunnel opens out */
+        html.arriving body > :not(#wormhole) { opacity: 0; transform: scale(1.04); }
+        html.landing body > :not(#wormhole) {
+            transition: opacity .9s ease, transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
 
         /* ---------- Overlay sheet (search / saved / about) ---------- */
         #sheet[hidden] { display: none; }
@@ -317,6 +319,16 @@
         // its promises; that's expected, so keep it out of the console
         addEventListener('pageswap', (e) => e.viewTransition?.ready.catch(() => {}));
         addEventListener('pagereveal', (e) => e.viewTransition?.ready.catch(() => {}));
+
+        // Arriving through a portal: hold the page back (before its first paint) for the wormhole
+        try {
+            const arrival = JSON.parse(sessionStorage.getItem('artestoa:arrival'));
+            sessionStorage.removeItem('artestoa:arrival');
+            if (arrival?.palette && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                window.artestoaArrival = arrival;
+                document.documentElement.classList.add('arriving');
+            }
+        } catch {}
     </script>
 </head>
 
@@ -329,23 +341,25 @@
     </div>
 
     <!-- ===== Entrance ===== -->
-    <!-- Stepping in from the hall: the portal's colours fade away to reveal the gallery -->
-    <div id="arrival" aria-hidden="true"></div>
+    <!-- Stepping in from the hall: the far end of the wormhole, then the gallery eases in -->
+    <script src="/core/wormhole.js"></script>
     <script>
-        try {
-            const colours = sessionStorage.getItem('artestoa:arrival');
-            if (colours) {
-                sessionStorage.removeItem('artestoa:arrival');
-                const veil = document.getElementById('arrival');
-                veil.style.background = `${colours}, var(--wall)`;
-                veil.classList.add('show');
-                requestAnimationFrame(() => requestAnimationFrame(() => veil.classList.add('fade')));
-            }
-        } catch {}
+        if (window.artestoaArrival) {
+            const root = document.documentElement;
+            const land = () => {
+                if (!root.classList.contains('arriving')) return;
+                root.classList.add('landing');
+                root.classList.remove('arriving');
+                setTimeout(() => root.classList.remove('landing'), 1500);
+            };
+            Wormhole.run({ palette: window.artestoaArrival.palette, direction: 'out', duration: 1150, onReveal: land });
+            // Never leave the page hidden, even if animation frames are held back
+            setTimeout(() => { land(); Wormhole.clear(); }, 2500);
+        }
     </script>
 
     <!-- The hall this gallery opens off -->
-    <a id="hall-crumb" href="index.html" class="absolute top-5 left-5 md:top-6 md:left-8 z-30 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors">
+    <a id="hall-crumb" href="/" class="absolute top-5 left-5 md:top-6 md:left-8 z-30 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors">
         <span class="material-symbols-outlined text-[16px]">arrow_back</span>
         <span><span class="font-display normal-case italic tracking-normal text-[15px]">arte·stoa</span><span id="wing-crumb" class="hidden sm:inline"></span></span>
     </a>
@@ -453,11 +467,11 @@
         <p id="gallery-exit" class="font-light leading-relaxed text-text-secondary-light dark:text-text-secondary-dark"></p>
         <p id="saved-summary" class="mt-8 text-sm text-text-secondary-light dark:text-text-secondary-dark"></p>
         <div class="mt-12 flex flex-wrap items-center justify-center gap-3">
-            <a id="exit-hall" href="index.html" class="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-full text-sm font-medium hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-colors shadow-lg">
+            <a id="exit-hall" href="/" class="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-full text-sm font-medium hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-colors shadow-lg">
                 <span class="material-symbols-outlined text-[18px]">arrow_back</span>
                 Back to the hall
             </a>
-            <a id="exit-next" href="index.html" class="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium border border-black/15 dark:border-white/20 hover:border-primary hover:text-primary transition-colors"></a>
+            <a id="exit-next" href="/" class="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium border border-black/15 dark:border-white/20 hover:border-primary hover:text-primary transition-colors"></a>
         </div>
     </section>
 
@@ -500,8 +514,8 @@
         </div>
     </div>
 
-    <script src="artists/registry.js"></script>
-    <script src="core/artestoa.js"></script>
+    <script src="/artists/registry.js"></script>
+    <script src="/core/artestoa.js"></script>
     <script>
         // Coming back from a work: let the browser morph its image back into its frame
         window.addEventListener('pagereveal', (e) => {
@@ -545,8 +559,13 @@
                 exitNext.href = Artestoa.galleryUrl(nextDoor.slug);
                 exitNext.textContent = `Next door: ${nextDoor.name} →`;
             } else {
-                exitNext.href = 'index.html#exhibit';
+                exitNext.href = `${Artestoa.hallUrl()}#exhibit`;
                 exitNext.textContent = 'Next door: an empty wall. Exhibit here →';
+            }
+
+            // A detached gallery stands on its own, with no way back into the hall
+            if (Artestoa.isDetached(catalogue.slug)) {
+                ['hall-crumb', 'exit-hall', 'exit-next'].forEach((id) => document.getElementById(id).remove());
             }
 
             // --- Entrance details ---

@@ -7,8 +7,10 @@
     <!-- Old address for Orneril's work pages, from before Orneril joined the Artestoa hall -->
     <script>
         const params = new URLSearchParams(location.search);
-        params.set('a', 'orneril');
-        location.replace(`work.html?${params}`);
+        const id = params.get('id');
+        params.delete('id');
+        const qs = params.toString();
+        location.replace(id ? `/orneril/${encodeURIComponent(id)}${qs ? `?${qs}` : ''}` : '/orneril');
     </script>
 </head>
 <body></body>

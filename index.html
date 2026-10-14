@@ -8,7 +8,7 @@
 
     <!-- Links from before Orneril joined the hall (index.html#w-…, #room-…, #about) go to its gallery -->
     <script>
-        if (/^#(w-|room-|about$)/.test(location.hash)) location.replace(`gallery.html?a=orneril${location.hash}`);
+        if (/^#(w-|room-|about$)/.test(location.hash)) location.replace(`/orneril${location.hash}`);
     </script>
 
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
@@ -206,20 +206,16 @@
         .flat-ambient { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity .9s ease; }
         .flat-ambient.on { opacity: .45; }
 
-        /* ================= Stepping through a portal ================= */
-        #veil {
-            position: fixed; inset: 0; z-index: 100; pointer-events: none;
-            clip-path: circle(0 at var(--vx, 50%) var(--vy, 50%));
-            transition: clip-path .6s cubic-bezier(0.65, 0, 0.35, 1);
-        }
-        #veil.open { clip-path: circle(150% at var(--vx, 50%) var(--vy, 50%)); pointer-events: auto; }
+        /* Hint shown while the camera faces a portal */
+        #face-hint { transition: opacity .35s ease; }
+        #face-hint.off { opacity: 0; pointer-events: none; }
+        .portal-slot { cursor: pointer; }
 
         #sheet[hidden] { display: none; }
         #sheet .panel { animation: sheetUp .45s cubic-bezier(0.25, 1, 0.5, 1); }
         @keyframes sheetUp { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 
         @media (prefers-reduced-motion: reduce) {
-            #veil { transition: none; }
             .flat-portal .portal { transition: none; }
         }
     </style>
@@ -256,7 +252,8 @@
                 <p id="hud-wing" class="absolute top-6 left-1/2 -translate-x-1/2 text-[11px] uppercase tracking-[0.3em] opacity-70 whitespace-nowrap"></p>
                 <nav id="wing-dots" class="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4" aria-label="Wings"></nav>
                 <div id="focus-card" class="hidden-card absolute left-1/2 bottom-28 -translate-x-1/2 w-[min(92vw,460px)] rounded-2xl px-6 py-5 bg-[#fbf9f4]/95 dark:bg-[#1c1b19]/90 backdrop-blur-md shadow-2xl border border-black/5 dark:border-white/10 text-center" aria-live="polite"></div>
-                <p class="absolute bottom-6 left-6 text-[10px] uppercase tracking-[0.25em] opacity-50 hidden lg:block">Scroll or ↑ ↓ to walk · Enter to step inside</p>
+                <p id="face-hint" class="off absolute left-1/2 -translate-x-1/2 bottom-28 whitespace-nowrap rounded-full px-5 py-2.5 text-xs font-medium bg-[#fbf9f4]/95 dark:bg-[#1c1b19]/90 backdrop-blur-md shadow-xl border border-black/5 dark:border-white/10"></p>
+                <p class="absolute bottom-6 left-6 text-[10px] uppercase tracking-[0.25em] opacity-50 hidden lg:block">Scroll or ↑ ↓ to walk · Point at a frame to face it · Enter to step inside</p>
             </div>
         </div>
     </section>
@@ -326,10 +323,9 @@
         </div>
     </div>
 
-    <div id="veil" aria-hidden="true"></div>
-
-    <script src="artists/registry.js"></script>
-    <script src="core/artestoa.js"></script>
+    <script src="/artists/registry.js"></script>
+    <script src="/core/artestoa.js"></script>
+    <script src="/core/wormhole.js"></script>
     <script>
     (() => {
         const { escapeHtml, glowFor } = Artestoa;
@@ -384,30 +380,43 @@
         const paletteOf = (stop) => (stop.kind === 'maker' ? stop.artist.palette : NEUTRAL);
 
         // ---------- Stepping through a portal ----------
-        function stepInto(stop, x, y) {
+        // The camera pushes into the frame, the wormhole carries the visitor through, and the
+        // gallery picks up the far end of the same tunnel (see the arrival code in gallery.html).
+        let entering = false;
+        const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+        async function stepInto(stop) {
             if (stop.kind !== 'maker') {
                 $('exhibit').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
                 return;
             }
-            const veil = $('veil');
-            const at = [Math.round((x / innerWidth) * 100), Math.round((y / innerHeight) * 100)];
-            const bg = `${glowFor({ palette: stop.artist.palette }, { alpha: 1, at })}, var(--bg)`;
-            veil.style.setProperty('--vx', `${x}px`);
-            veil.style.setProperty('--vy', `${y}px`);
-            veil.style.background = bg;
-            // The gallery opens out of the same colours
-            try { sessionStorage.setItem('artestoa:arrival', glowFor({ palette: stop.artist.palette }, { alpha: 1 })); } catch {}
-            veil.classList.add('open');
-            setTimeout(() => (location.href = portalHref(stop)), reduceMotion ? 0 : 560);
+            if (entering) return;
+            entering = true;
+            try { sessionStorage.setItem('artestoa:arrival', JSON.stringify({ palette: stop.artist.palette })); } catch {}
+            if (reduceMotion) { location.href = portalHref(stop); return; }
+            if (mode === '3d') {
+                face(layout.placed.find((p) => p.stop === stop), { enter: true });
+                await wait(520);
+            }
+            // If animation frames are held back (a background tab, a struggling device), go anyway
+            await Promise.race([Wormhole.run({ palette: stop.artist.palette, direction: 'in', duration: 1250 }), wait(2200)]);
+            // The wormhole is the transition; opt this navigation out of the browser's own crossfade
+            document.head.insertAdjacentHTML('beforeend', '<style id="no-page-transition">@view-transition { navigation: none; }</style>');
+            location.href = portalHref(stop);
         }
         document.addEventListener('click', (e) => {
             const el = e.target.closest('.portal');
             if (!el || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
             e.preventDefault();
-            stepInto(stops[Number(el.dataset.stop)], e.clientX || innerWidth / 2, e.clientY || innerHeight / 2);
+            stepInto(stops[Number(el.dataset.stop)]);
         });
-        // Coming back with the browser's back button: lift the veil
-        addEventListener('pageshow', () => $('veil').classList.remove('open'));
+        // Coming back with the browser's back button: close the tunnel and step back from the frame
+        addEventListener('pageshow', (e) => {
+            if (!e.persisted) return;
+            Wormhole.clear();
+            $('no-page-transition')?.remove();
+            entering = false;
+            if (mode === '3d') unface();
+        });
 
         // ---------- Focus: the portal you're facing ----------
         let focused = null;
@@ -435,7 +444,7 @@
         $('focus-card').addEventListener('click', (e) => {
             if (!e.target.closest('[data-enter]') || !focused) return;
             e.preventDefault();
-            stepInto(focused, e.clientX, e.clientY);
+            stepInto(focused);
         });
 
         // ================= 3D CORRIDOR =================
@@ -447,6 +456,133 @@
         let layout = null;      // geometry of the current build
         let t = 0;              // how far the visitor has walked, px
         let raf = 0;
+
+        /*
+         * The camera. #scene's perspective puts the viewer PERSPECTIVE px in front of the
+         * world's origin, looking down -z. To place a camera at (x, y, z) turned `yaw` degrees
+         * (positive = toward the left wall), the world is moved the opposite way:
+         *   translateZ(PERSPECTIVE) rotateY(-yaw) translate3d(-x, -y, -z)
+         * Walking is the camera sliding down the hall; facing a portal flies it to stand
+         * square in front of the frame. Every move eases toward its target each frame.
+         */
+        const PERSPECTIVE = 820;
+        const LOOK = 4;                                   // degrees the head turns toward the cursor
+        const cam = { x: 0, y: 0, z: PERSPECTIVE, yaw: 0 };
+        let lookYaw = 0;
+        let facing = null;                                // the placed portal being faced
+        let faceScrollY = 0;
+        let camRaf = 0, camLast = 0;
+
+        function walkPose() { return { x: 0, y: 0, z: PERSPECTIVE - t, yaw: facing ? 0 : lookYaw }; }
+        function facePose(p, close) {
+            const rad = (p.turn * Math.PI) / 180;
+            const n = [Math.sin(rad), Math.cos(rad)];      // the frame's facing direction (x, z)
+            // Far enough that the frame fills ~62% of the height, but never past the opposite wall
+            let d = (PERSPECTIVE * p.h) / (0.62 * layout.H);
+            // Backing away along n[0] toward the opposite wall: stop 70px short of it
+            const wallX = Math.sign(n[0]) * (layout.W / 2 - 70);
+            d = Math.min(d, (wallX - p.centre.x) / n[0]);
+            if (close) d = 110;                             // pressed right up against the frame
+            // Aim a touch low so the frame and its plaque sit clear of the hint and dock below
+            const lift = close ? 0 : (0.06 * layout.H * d) / PERSPECTIVE;
+            return { x: p.centre.x + n[0] * d, y: p.centre.y + lift, z: p.centre.z + n[1] * d, yaw: p.turn };
+        }
+        function applyCamera() {
+            world.style.transform =
+                `translateZ(${PERSPECTIVE}px) rotateY(${(-cam.yaw).toFixed(3)}deg) translate3d(${(-cam.x).toFixed(2)}px, ${(-cam.y).toFixed(2)}px, ${(-cam.z).toFixed(2)}px)`;
+        }
+        function camTick(now) {
+            const target = facing ? facePose(facing, entering) : walkPose();
+            const dt = Math.min(64, now - (camLast || now - 16));
+            camLast = now;
+            // Exponential easing; facing is slower and more cinematic than walking
+            const tau = entering ? 230 : facing ? 260 : 85;
+            const k = 1 - Math.exp(-dt / tau);
+            let moving = false;
+            for (const key of ['x', 'y', 'z', 'yaw']) {
+                const diff = target[key] - cam[key];
+                if (Math.abs(diff) > (key === 'yaw' ? 0.01 : 0.2)) { cam[key] += diff * k; moving = true; }
+                else cam[key] = target[key];
+            }
+            applyCamera();
+            camRaf = moving ? requestAnimationFrame(camTick) : 0;
+            if (!moving) camLast = 0;
+        }
+        const kickCamera = () => { if (!camRaf) camRaf = requestAnimationFrame(camTick); };
+
+        function face(p, { enter = false } = {}) {
+            if (!p) return;
+            clearTimeout(leaveTimer); leaveTimer = null;
+            const changed = facing !== p;
+            facing = p;
+            faceScrollY = scrollY;
+            if (changed) {
+                document.querySelectorAll('.portal-slot.faced').forEach((el) => el.classList.remove('faced'));
+                p.el.classList.add('faced');
+                render3d();
+                const maker = p.stop.kind === 'maker';
+                $('face-hint').innerHTML = maker
+                    ? `Click to step into <span class="font-display italic text-sm">${escapeHtml(p.stop.artist.name)}</span> · <span class="opacity-60">Esc to step back</span>`
+                    : `Click to exhibit here · <span class="opacity-60">Esc to step back</span>`;
+            }
+            $('face-hint').classList.toggle('off', enter);
+            kickCamera();
+        }
+        function unface() {
+            if (!facing) return;
+            facing.el.classList.remove('faced');
+            facing = null;
+            clearTimeout(leaveTimer); leaveTimer = null;
+            $('face-hint').classList.add('off');
+            render3d();
+            kickCamera();
+        }
+
+        // Pointing at a frame turns the camera to face it; pointing away (for a moment) lets go.
+        // Only real pointer movement counts: the scene moving under a still cursor doesn't.
+        let leaveTimer = null;
+        let lastPointer = [-1, -1];
+        scene.addEventListener('mousemove', (e) => {
+            if (mode !== '3d' || entering) return;
+            if (e.clientX === lastPointer[0] && e.clientY === lastPointer[1]) return;
+            lastPointer = [e.clientX, e.clientY];
+
+            if (!facing) { lookYaw = (0.5 - e.clientX / innerWidth) * 2 * LOOK; kickCamera(); }
+
+            // Heading toward a frame is enough: the nearest one the cursor is on or near
+            const target = document.body.classList.contains('is-walking') ? null : frameNear(e.clientX, e.clientY, e.target);
+            if (target) { face(target); return; }
+            if (facing) {
+                const r = facing.el.getBoundingClientRect();
+                const pad = 70;
+                const near = e.clientX > r.left - pad && e.clientX < r.right + pad && e.clientY > r.top - pad && e.clientY < r.bottom + pad;
+                if (near) { clearTimeout(leaveTimer); leaveTimer = null; }
+                else if (!leaveTimer) leaveTimer = setTimeout(unface, 450);
+            }
+        });
+        // The frame under, or within reach of, a point on screen. Frames still far down the
+        // hall are too small to aim at deliberately, and ones already passed are behind you.
+        function frameNear(x, y, el) {
+            const under = el.closest?.('.portal-slot');
+            if (under) return layout.placed[Number(under.dataset.i)];
+            const REACH = 56;
+            let best = null, bestD = Infinity;
+            for (const p of layout.placed) {
+                if (!p.el) continue;
+                const d = -(p.z + t);
+                if (d < 150 || d > 1900 || d >= bestD) continue;
+                const r = p.el.getBoundingClientRect();
+                if (x > r.left - REACH && x < r.right + REACH && y > r.top - REACH && y < r.bottom + REACH) { best = p; bestD = d; }
+            }
+            return best;
+        }
+
+        scene.addEventListener('mouseleave', () => {
+            if (mode !== '3d' || entering) return;
+            lookYaw = 0;
+            if (facing && !leaveTimer) leaveTimer = setTimeout(unface, 450);
+            kickCamera();
+        });
 
         function build3d() {
             const H = innerHeight;
@@ -479,7 +615,7 @@
                 html += `<div class="ceiling-light" style="width:140px;height:26px;transform:translate3d(-70px, ${-H / 2 + 1}px, ${lz}px) rotateX(-90deg)"></div>`;
             }
 
-            placed.forEach((p) => {
+            placed.forEach((p, i) => {
                 if (p.stop.kind === 'banner') {
                     const w = p.stop.wing;
                     html += `<div class="banner" data-z="${p.z}" style="width:560px;height:130px;transform:translate3d(-280px, ${-H / 2 + 24}px, ${p.z}px)">
@@ -495,8 +631,9 @@
                 // Portals hang on panels that swing out from the wall, like doors left ajar
                 const turn = left ? 56 : -56;
                 const origin = left ? '0 50%' : '100% 50%';
+                Object.assign(p, { x, y, turn, PW });
                 html += `<div class="floor-pool" style="width:${PW * 1.8}px;height:${PW * 1.4}px;transform:translate3d(${left ? -W / 2 + 10 : W / 2 - 10 - PW * 1.8}px, ${H / 2 - 1}px, ${p.z + PW * 0.2}px) rotateX(-90deg)"></div>`;
-                html += `<div class="portal-slot" data-z="${p.z}" style="width:${PW}px;transform-origin:${origin};transform:translate3d(${x}px, ${y}px, ${p.z}px) rotateY(${turn}deg)">${portalHtml(p.stop)}</div>`;
+                html += `<div class="portal-slot" data-i="${i}" data-z="${p.z}" style="width:${PW}px;transform-origin:${origin};transform:translate3d(${x}px, ${y}px, ${p.z}px) rotateY(${turn}deg)">${portalHtml(p.stop)}</div>`;
             });
 
             // The back wall: the end of the hall, for now
@@ -509,9 +646,22 @@
             world.innerHTML = html;
             corridor.style.height = `${travel + H}px`;
             layout = {
-                H, travel, placed,
+                H, W, travel, placed,
                 slots: [...world.querySelectorAll('.portal-slot, .banner')],
             };
+
+            // Each frame's centre in the world, for the camera to face it. A panel turns about
+            // its wall-side edge (its hinge), so the centre sits half a width along the turn.
+            placed.forEach((p, i) => {
+                if (p.stop.kind === 'banner') return;
+                p.el = world.querySelector(`.portal-slot[data-i="${i}"]`);
+                p.h = p.el.offsetHeight;
+                const rad = (p.turn * Math.PI) / 180;
+                const hingeX = p.side === 'left' ? p.x : p.x + p.PW;
+                const half = p.side === 'left' ? p.PW / 2 : -p.PW / 2;
+                p.centre = { x: hingeX + half * Math.cos(rad), y: p.y + p.h / 2, z: p.z - half * Math.sin(rad) };
+            });
+            facing = null;
 
             // Wing markers on the right edge
             $('wing-dots').innerHTML = wings.map((w) => `<button class="wing-dot" data-wing="${w.id}" aria-label="Walk to the ${escapeHtml(w.title)} wing" title="${escapeHtml(w.title)}"></button>`).join('');
@@ -527,13 +677,16 @@
             raf = 0;
             if (!layout) return;
             t = Math.max(0, Math.min(layout.travel, scrollY - corridor.offsetTop));
-            world.style.transform = `translate3d(0, 0, ${t}px)`;
+            // Walking on lets go of a frame
+            if (facing && !entering && Math.abs(scrollY - faceScrollY) > 40) { unface(); return; }
+            kickCamera();
 
             // Fade things in out of the far gloom, and fade banners as you pass under them
             layout.slots.forEach((el) => {
                 const d = -(Number(el.dataset.z) + t);
                 let o = 1 - Math.max(0, d - 1500) / 2200;
                 if (el.classList.contains('banner')) o = Math.min(o, Math.max(0, (d - 120) / 260));
+                if (facing && el === facing.el) o = 1;
                 el.style.opacity = Math.max(0, Math.min(1, o)).toFixed(2);
             });
 
@@ -549,7 +702,9 @@
                 const d = -(p.z + t);
                 if (d > 260 && d < bestD) { best = p; bestD = d; }
             });
-            setFocus(t < 160 ? null : best?.stop || null, best);
+            if (facing) setFocus(facing.stop, facing);
+            else setFocus(t < 160 ? null : best?.stop || null, best);
+            $('focus-card').classList.toggle('hidden-card', Boolean(facing) || !focused);
 
             // Wing you're in
             const wingStop = [...layout.placed].reverse().find((p) => p.stop.kind === 'banner' && -(p.z + t) < 700);
@@ -580,7 +735,8 @@
             // and after a short pause so walking briskly past several portals stays smooth
             clearTimeout(glowTimer);
             glowTimer = setTimeout(() => {
-                glow.style.background = glowFor({ palette: paletteOf(stop) }, { at: [placed.side === 'left' ? 18 : 82, 50] });
+                const at = facing ? [50, 48] : [placed.side === 'left' ? 18 : 82, 50];
+                glow.style.background = glowFor({ palette: paletteOf(stop) }, { at });
                 glow.classList.add('on');
             }, 120);
         }
@@ -647,7 +803,15 @@
             }
         }
 
-        addEventListener('scroll', () => { if (mode === '3d') schedule(); }, { passive: true });
+        // While walking, frames sliding under the cursor shouldn't grab the camera
+        let walkIdle;
+        addEventListener('scroll', () => {
+            if (mode !== '3d') return;
+            schedule();
+            document.body.classList.add('is-walking');
+            clearTimeout(walkIdle);
+            walkIdle = setTimeout(() => document.body.classList.remove('is-walking'), 180);
+        }, { passive: true });
         let resizeRaf;
         addEventListener('resize', () => { cancelAnimationFrame(resizeRaf); resizeRaf = requestAnimationFrame(setMode); });
 
@@ -660,7 +824,8 @@
                 const target = e.key === 'ArrowDown' ? ahead[0] : ahead[ahead.length - 1];
                 scrollTo({ top: target ? scrollFor(target) : (e.key === 'ArrowDown' ? $('exhibit').offsetTop : corridor.offsetTop), behavior: 'smooth' });
             }
-            if (e.key === 'Enter' && focused && document.activeElement === document.body) stepInto(focused, innerWidth / 2, innerHeight / 2);
+            if (e.key === 'Enter' && focused && document.activeElement === document.body) stepInto(focused);
+            if (e.key === 'Escape' && facing) unface();
         });
 
         $('wing-dots').addEventListener('click', (e) => {

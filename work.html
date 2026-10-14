@@ -275,10 +275,10 @@
 
     <div id="toast" role="status" class="fixed left-1/2 -translate-x-1/2 bottom-28 lg:bottom-10 z-50 bg-gray-900 text-white dark:bg-white dark:text-gray-900 text-sm px-5 py-2.5 rounded-full shadow-xl"></div>
 
-    <script src="artists/registry.js"></script>
-<script src="core/artestoa.js"></script>
+    <script src="/artists/registry.js"></script>
+<script src="/core/artestoa.js"></script>
 <script>
-// work.html?a=<artist slug>&id=<work id>[&tour=1]
+// /<maker>/<work>[?tour=1] (or work.html?a=<maker>&id=<work> as a fallback)
 Artestoa.currentCatalogue().then((catalogue) => {
     const myGalleryData = catalogue.works;
     const galleryRooms = catalogue.rooms;
@@ -288,7 +288,7 @@ Artestoa.currentCatalogue().then((catalogue) => {
     // --- 1. WHICH WORK? ---
     const params = new URLSearchParams(window.location.search);
     const touring = params.get('tour') === '1';
-    const work = catalogue.find(params.get('id')) || myGalleryData[0];
+    const work = catalogue.find(Artestoa.route().work) || myGalleryData[0];
     const room = galleryRooms.find((r) => r.id === work.room);
 
     // Walking order: the guided tour covers the titled works; free browsing covers everything

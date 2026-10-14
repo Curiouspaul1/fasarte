@@ -1,14 +1,22 @@
 /*
  * Artestoa core: everything the hall, galleries and work pages share.
  *
+ *  - Routing: which maker and work a page is showing, read from the address:
+ *        artestoa.com/orneril            a gallery
+ *        artestoa.com/orneril/lumera     a work
+ *        orneril.artestoa.com/lumera     the same, once subdomains are switched on
+ *        orneril.com/lumera              a maker with a domain of their own ("detached")
+ *        gallery.html?a=orneril          the plain-file fallback (tidied into the forms above)
  *  - Loading an artist's catalogue (artists/<slug>/catalogue.js). Only slugs listed in
- *    the registry (artists/registry.js) can be loaded, so the ?a= URL parameter can
- *    never point a page at an arbitrary script.
+ *    the registry (artists/registry.js) can be loaded, so an address can never point a
+ *    page at an arbitrary script.
  *  - URLs between the hall, a gallery and a work.
  *  - Saved works, kept across every gallery as "artist/work" ids.
  *  - Per-artist theme (accent colour) and the coloured glow built from a palette.
  *
- * Load order on every page: artists/registry.js, then this file.
+ * Load order on every page: artists/registry.js, then this file. Every path is
+ * root-absolute ("/artists/…"), so the site must be served from the root of its domain
+ * (tools/serve.mjs locally; see _redirects for hosting).
  */
 const Artestoa = (() => {
     const catalogues = {};
@@ -19,7 +27,7 @@ const Artestoa = (() => {
     // Called by each artists/<slug>/catalogue.js. Image paths in a catalogue are relative
     // to the artist's folder; here they become relative to the site root.
     function registerCatalogue(slug, data) {
-        const base = `artists/${slug}/`;
+        const base = `/artists/${slug}/`;
         const works = data.works.map((work, i) => ({
             ...work,
             artist: slug,
@@ -48,28 +56,67 @@ const Artestoa = (() => {
             const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
             loading[slug] = { promise, resolve };
             const script = document.createElement("script");
-            script.src = `artists/${slug}/catalogue.js`;
+            script.src = `/artists/${slug}/catalogue.js`;
             script.onerror = () => reject(new Error(`Could not load the catalogue for "${slug}"`));
             document.head.appendChild(script);
         }
         return loading[slug].promise;
     }
 
-    // The catalogue for this page's ?a=<slug>. A missing or unknown artist goes back to the hall.
+    // ---------- Routing ----------
+
+    // Which maker (and work) this address is for. `onHost` means the maker owns the whole
+    // host (a subdomain or their own domain), so their gallery lives at "/".
+    function route() {
+        const host = location.hostname.replace(/^www\./, "");
+        const query = new URLSearchParams(location.search);
+        const parts = location.pathname.split("/").filter((p) => p && !p.endsWith(".html"));
+        const own = artestoa.artists.find((a) => a.domain && a.domain.replace(/^www\./, "") === host);
+        const hall = artestoa.domain;
+        const sub = hall && host.endsWith(`.${hall}`) ? host.slice(0, -hall.length - 1) : null;
+        const hostSlug = own?.slug || (sub && registryEntry(sub) ? sub : null);
+        if (hostSlug) return { slug: hostSlug, work: parts[0] || query.get("id"), onHost: true };
+        return { slug: parts[0] || query.get("a"), work: parts[1] || query.get("id"), onHost: false };
+    }
+    const here = route();
+
+    // The catalogue this page shows. An unknown maker goes back to the hall.
     function currentCatalogue() {
-        const slug = new URLSearchParams(location.search).get("a");
-        return loadCatalogue(slug).catch(() => {
-            location.replace("index.html");
+        return loadCatalogue(here.slug).then((catalogue) => {
+            // Opened via gallery.html?a=… / work.html?a=…&id=…: show the clean address instead
+            if (location.pathname.endsWith(".html")) {
+                const tour = new URLSearchParams(location.search).get("tour");
+                const clean = here.work
+                    ? workUrl({ artist: here.slug, id: here.work }, tour ? { tour } : {})
+                    : galleryUrl(here.slug);
+                try { history.replaceState(history.state, "", clean + location.hash); } catch {}
+            }
+            return catalogue;
+        }).catch(() => {
+            location.replace(hallUrl());
             return new Promise(() => {});
         });
     }
 
     // ---------- URLs ----------
 
-    const hallUrl = (slug) => (slug ? `index.html#portal-${slug}` : "index.html");
-    const galleryUrl = (slug, hash) => `gallery.html?a=${encodeURIComponent(slug)}${hash ? `#${hash}` : ""}`;
-    const workUrl = (work, extra = {}) =>
-        `work.html?${new URLSearchParams({ a: work.artist, id: work.id, ...extra })}`;
+    // On a maker's own host, their pages are local ("/", "/lumera") and everything else
+    // lives on the hall's origin. Elsewhere, everything is a path on this origin.
+    const hallOrigin = () => (here.onHost ? `https://${artestoa.domain}` : "");
+    const hallUrl = (slug) => `${hallOrigin()}/${slug ? `#portal-${slug}` : ""}`;
+    function galleryUrl(slug, hash) {
+        const h = hash ? `#${hash}` : "";
+        if (here.onHost && slug === here.slug) return `/${h}`;
+        return `${hallOrigin()}/${encodeURIComponent(slug)}${h}`;
+    }
+    function workUrl(work, extra = {}) {
+        const qs = new URLSearchParams(extra).toString();
+        const tail = `${encodeURIComponent(work.id)}${qs ? `?${qs}` : ""}`;
+        if (here.onHost && work.artist === here.slug) return `/${tail}`;
+        return `${hallOrigin()}/${encodeURIComponent(work.artist)}/${tail}`;
+    }
+    // A detached gallery stands on its own: no way back into the hall
+    const isDetached = (slug) => Boolean(registryEntry(slug)?.detached);
 
     // ---------- Saved works ----------
 
@@ -141,8 +188,8 @@ const Artestoa = (() => {
     const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
     return {
-        registerCatalogue, loadCatalogue, currentCatalogue, registryEntry,
-        hallUrl, galleryUrl, workUrl,
+        registerCatalogue, loadCatalogue, currentCatalogue, registryEntry, route,
+        hallUrl, galleryUrl, workUrl, isDetached,
         readSaved, isSaved, toggleSaved, savedWorks,
         applyTheme, glowFor, vivid, rgb, escapeHtml,
     };

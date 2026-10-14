@@ -5,6 +5,10 @@
  * Each maker's full catalogue lives in artists/<slug>/catalogue.js and is loaded only
  * when someone steps into that gallery.
  *
+ * A maker can also be given a domain of their own (`domain: "orneril.com"`), and
+ * `detached: true` makes their gallery stand alone: no breadcrumb or exits back into
+ * the hall. That is the "detach a listing" option.
+ *
  * To add a maker:
  *   1. Create artists/<slug>/catalogue.js (copy artists/orneril/catalogue.js as a template).
  *   2. Add an entry to `artists` below. `cover` is the piece that hangs in the hall.
@@ -13,6 +17,10 @@
 const artestoa = {
     name: "Artestoa",
     tagline: "A hall of handcraft",
+
+    // The hall's own domain. Galleries are paths on it (artestoa.com/orneril); once
+    // wildcard DNS is set up they also answer on subdomains (orneril.artestoa.com).
+    domain: "artestoa.com",
 
     // Where the empty portals send makers who want to exhibit. Either can be left empty;
     // whichever is set becomes a button. (Not filled in yet.)
@@ -40,8 +48,10 @@ const artestoa = {
             location: "",
             since: 2023,
             works: 34, // keep in step with the catalogue
-            cover: { src: "artists/orneril/images/works/lumera/1-sm.jpg", title: "Lumera" },
+            cover: { src: "/artists/orneril/images/works/lumera/1-sm.jpg", title: "Lumera" },
             palette: ["#f2a7bd", "#b9a2d9", "#b8cf8a"],
+            domain: "",          // a domain of their own, e.g. "orneril.com"
+            detached: false,     // true: the gallery stands alone, without the hall around it
         },
     ],
 };
