@@ -78,17 +78,16 @@
         .wordmark { font-family: "Playfair Display", serif; font-style: italic; letter-spacing: -0.01em; }
         .card { background: var(--card); backdrop-filter: blur(12px); }
 
-        /* ================= 3D hall (wide screens) =================
-           The hall fills the window and doesn't scroll: the camera moves between stations. */
-        html.hall-3d, html.hall-3d body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+        /* ================= 3D hall (wide screens) ================= */
+        #corridor { position: relative; }
         #scene {
-            position: fixed;
-            inset: 0;
+            position: sticky;
+            top: 0;
+            height: 100vh;
             overflow: hidden;
             perspective: 820px;
             perspective-origin: 50% 46%;
             background: var(--bg);
-            touch-action: none;
         }
         #world {
             position: absolute;
@@ -110,6 +109,7 @@
         }
         .floor { background: linear-gradient(to bottom, var(--floor-near), var(--floor-far)); }
         .ceiling { background: var(--ceiling); }
+        .back-wall-plane { background: var(--wall-far); }
         .ceiling-light {
             background: rgba(255, 248, 228, .95);
             box-shadow: 0 0 40px 12px rgba(255, 240, 205, .45);
@@ -145,7 +145,7 @@
             background: var(--frame);
             padding: 9px;
             box-shadow: 0 2px 4px rgba(0,0,0,.15), 0 30px 50px -24px rgba(0,0,0,.55);
-            transition: box-shadow .6s ease;
+            transition: box-shadow .5s ease;
         }
         .portal .mat { background: var(--mat); padding: 10%; }
         .portal img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
@@ -161,9 +161,6 @@
             text-align: center;
         }
         .portal.lit .frame { box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 0 60px 6px var(--lit, rgba(255,240,200,.25)), 0 30px 50px -24px rgba(0,0,0,.55); }
-        /* Frames you could walk to brighten a touch under the ring */
-        .portal-slot .portal { transition: filter .3s ease; }
-        .portal-slot.aimed .portal { filter: brightness(1.08); }
 
         /* An open wall: an empty frame waiting for a maker */
         .portal.open .mat {
@@ -181,67 +178,74 @@
             width: 44px; height: 44px; border-radius: 999px;
             border: 1px dashed rgba(0,0,0,.35);
             display: flex; align-items: center; justify-content: center;
+            transition: transform .4s ease, background-color .4s ease;
         }
+        .portal.open:hover .plus { transform: scale(1.1); background: rgba(0,0,0,.05); }
         .portal.open .plaque { background: linear-gradient(180deg, #cfc8ba, #a49c8c); }
 
-        /* ---------- HUD ---------- */
+        /* ---------- HUD over the hall ---------- */
         #hud { position: absolute; inset: 0; pointer-events: none; }
         #hud > * { pointer-events: auto; }
-        .hud-fade { transition: opacity .5s ease, transform .5s ease; }
-        .hud-fade.away { opacity: 0; }
-        /* Faded-out pieces of the HUD must never catch clicks meant for the hall (id selectors,
-           to outrank "#hud > *" above) */
-        #hud > .away { pointer-events: none; }
         /* The welcome text hangs over the far end of the hall: only its button is clickable */
-        #hud > #hall-hero { pointer-events: none; }
-        #hud > #hall-hero:not(.away) a { pointer-events: auto; }
-        #focus-card.away { transform: translate(12px, -50%); }
+        #hud > #hall-hero { pointer-events: none; transition: opacity .2s linear; }
+        #hud > #hall-hero a { pointer-events: auto; }
+        #focus-card { transition: opacity .35s ease, transform .35s ease; }
+        #focus-card.hidden-card { opacity: 0; transform: translate(-50%, 12px); pointer-events: none; }
         .wing-dot { width: 8px; height: 8px; border-radius: 999px; background: rgba(127,127,127,.4); transition: transform .3s ease, background-color .3s ease; }
         .wing-dot.active { background: rgb(var(--accent)); transform: scale(1.5); }
-        .step-btn { width: 44px; height: 44px; border-radius: 999px; display: flex; align-items: center; justify-content: center; transition: background-color .25s ease, opacity .25s ease; }
-        .step-btn:hover { background: rgba(127,127,127,.18); }
-        .step-btn:disabled { opacity: .25; pointer-events: none; }
 
         #hero-scrim {
             position: absolute; inset: 0; pointer-events: none;
             background: radial-gradient(48% 42% at 50% 40%, var(--bg) 0%, color-mix(in srgb, var(--bg) 80%, transparent) 45%, transparent 80%);
         }
-        /* Coloured light from the frame you're standing at */
+        /* Coloured light from the frame in focus, laid over the scene */
         #hall-glow { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .9s ease; }
         #hall-glow.on { opacity: .5; }
         @media (prefers-color-scheme: dark) { #hall-glow.on { opacity: .38; } }
 
-        /* ---------- The ring: a cursor that says what a click will do ---------- */
-        html.hall-3d.fine-pointer #scene { cursor: none; }
-        html.hall-3d.fine-pointer #hud a, html.hall-3d.fine-pointer #hud button { cursor: pointer; }
+        /* Things only one of the two modes shows */
+        html:not(.exploring) .explore-only, html.exploring .walk-only { display: none !important; }
+
+        #mode-toggle[aria-pressed="true"] { background: rgb(var(--accent)); color: #fff; border-color: transparent; }
+
+        /* ================= Free look =================
+           The page stops scrolling, the camera goes wherever the visitor drags or walks it,
+           and a ring cursor names what a click will do. */
+        /* Lock scrolling on <html> only: hiding overflow on <body> too would make the body
+           its own scroll container, and the sticky hall would jump back to the top */
+        html.exploring { overflow: hidden; overscroll-behavior: none; }
+        html.exploring #scene { touch-action: none; }
+        html.exploring.fine-pointer #scene { cursor: none; }
+        html.exploring #hud a, html.exploring #hud button { cursor: pointer; }
+        /* In free look the card sits beside the view, clear of the walking controls */
+        html.exploring #focus-card { left: auto; right: 4vw; bottom: auto; top: 50%; width: min(300px, 26vw); transform: translateY(-50%); text-align: left; }
+        html.exploring #focus-card.hidden-card { transform: translate(12px, -50%); }
+
         #ring {
             position: fixed; left: 0; top: 0; z-index: 90; pointer-events: none;
-            display: flex; align-items: center; justify-content: center;
-            min-width: 34px; height: 34px; padding: 0;
+            display: none; align-items: center; justify-content: center; gap: 6px;
+            min-width: 38px; height: 38px; padding: 0;
             border-radius: 999px;
-            border: 1.5px solid rgb(var(--accent) / .9);
+            border: 1.5px solid rgb(var(--accent) / .95);
             color: var(--ink);
             font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
             white-space: nowrap;
-            transition: min-width .25s ease, height .25s ease, padding .25s ease, background-color .25s ease, opacity .2s ease;
+            transition: min-width .2s ease, height .2s ease, padding .2s ease, background-color .2s ease, opacity .15s ease;
             will-change: transform;
         }
-        #ring.labelled { height: 40px; padding: 0 16px; background: var(--card); backdrop-filter: blur(8px); }
-        #ring.hidden { opacity: 0; }
+        html.exploring.fine-pointer #ring { display: flex; }
+        #ring::before { content: ""; width: 5px; height: 5px; border-radius: 999px; background: rgb(var(--accent)); }
+        #ring.labelled { height: 40px; padding: 0 16px 0 12px; background: var(--card); backdrop-filter: blur(8px); }
+        #ring.away { opacity: 0; }
 
-        /* ---------- Exhibit as an overlay over the hall ---------- */
-        html.hall-3d #exhibit {
-            position: fixed; inset: 0; z-index: 70; overflow-y: auto;
-            background: var(--bg);
-            opacity: 0; visibility: hidden; transform: scale(1.02);
+        .pad-btn {
+            width: 46px; height: 46px; border-radius: 999px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background-color .2s ease, transform .15s ease;
+            touch-action: none; user-select: none;
         }
-        /* Animate only once the hall is set up, so switching into 3D doesn't flash the overlay */
-        html.hall-3d.hall-ready #exhibit {
-            transition: opacity .4s ease, transform .5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear .5s;
-        }
-        html.hall-3d #exhibit.open { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
-        #exhibit-close { display: none; }
-        html.hall-3d #exhibit-close { display: flex; }
+        .pad-btn:hover { background: rgba(127,127,127,.18); }
+        .pad-btn.held { background: rgb(var(--accent)); color: #fff; transform: scale(.94); }
 
         /* ================= Flat walk (phones, reduced motion) ================= */
         .flat-portal { perspective: 900px; }
@@ -269,7 +273,7 @@
 </head>
 <body class="font-body antialiased selection:bg-primary/30">
 
-    <!-- Hero: hangs over the vanishing point at the entrance (3D) or opens the walk (flat) -->
+    <!-- Hero: hangs over the corridor's vanishing point (3D) or opens the walk (flat) -->
     <header id="hall-hero" class="text-center px-6">
         <p class="text-[11px] font-semibold tracking-[0.4em] uppercase opacity-70 mb-5">Welcome to</p>
         <h1 class="wordmark text-7xl md:text-[7.5rem] leading-none mb-5">arte·stoa</h1>
@@ -277,74 +281,75 @@
         <p id="hall-stats" class="mt-6 text-[11px] uppercase tracking-[0.25em] opacity-60"></p>
         <a href="#" id="enter-hall" class="mt-8 inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-full text-sm font-medium hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-colors shadow-lg">
             Walk the hall
-            <span id="enter-icon" class="material-symbols-outlined text-[18px]">south</span>
+            <span class="material-symbols-outlined text-[18px]">south</span>
         </a>
     </header>
 
-    <!-- 3D hall -->
+    <!-- 3D corridor -->
     <section id="corridor" hidden aria-label="The hall">
         <div id="scene">
             <div id="world"></div>
             <div id="hall-glow" aria-hidden="true"></div>
-            <!-- Softens the far end of the hall behind the welcome text at the entrance -->
-            <div id="hero-scrim" class="hud-fade" aria-hidden="true"></div>
+            <!-- Softens the far end of the hall behind the welcome text, then lifts as you walk -->
+            <div id="hero-scrim" aria-hidden="true"></div>
             <div id="hud">
                 <a href="#" id="hud-mark" class="absolute top-5 left-6 wordmark text-xl opacity-80 hover:opacity-100">arte·stoa</a>
-                <div class="absolute top-6 left-1/2 -translate-x-1/2 text-center">
-                    <p id="hud-wing" class="text-[11px] uppercase tracking-[0.3em] opacity-75 whitespace-nowrap"></p>
-                </div>
-                <nav id="wing-dots" class="absolute left-6 top-1/2 -translate-y-1/2 flex flex-col gap-4" aria-label="Wings"></nav>
+                <p id="hud-wing" class="absolute top-6 left-1/2 -translate-x-1/2 text-[11px] uppercase tracking-[0.3em] opacity-70 whitespace-nowrap"></p>
 
-                <!-- About the frame you're standing at: beside it, never over it -->
-                <div id="focus-card" class="hud-fade away card absolute top-1/2 right-[4vw] w-[min(300px,26vw)] -translate-y-1/2 rounded-2xl px-6 py-5 shadow-2xl border border-black/5 dark:border-white/10" aria-live="polite"></div>
+                <!-- Switch between scrolling down the hall and free look -->
+                <button id="mode-toggle" aria-pressed="false" class="absolute top-4 right-5 inline-flex items-center gap-2 rounded-full pl-3 pr-4 py-2 text-xs font-medium card border border-black/10 dark:border-white/10 shadow-md transition-colors">
+                    <span id="mode-icon" class="material-symbols-outlined text-[20px]">360</span>
+                    <span id="mode-label">Free look</span>
+                </button>
 
-                <div class="absolute left-1/2 -translate-x-1/2 bottom-28 flex items-center gap-3 card rounded-full px-2 py-1.5 shadow-lg border border-black/5 dark:border-white/10">
-                    <button id="step-prev" class="step-btn" aria-label="Previous stop"><span class="material-symbols-outlined">chevron_left</span></button>
-                    <p id="hud-count" class="min-w-[5.5rem] text-center text-[11px] uppercase tracking-[0.2em] opacity-80" aria-live="polite"></p>
-                    <button id="step-next" class="step-btn" aria-label="Next stop"><span class="material-symbols-outlined">chevron_right</span></button>
+                <nav id="wing-dots" class="walk-only absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4" aria-label="Wings"></nav>
+                <div id="focus-card" class="hidden-card card absolute left-1/2 bottom-28 -translate-x-1/2 w-[min(92vw,460px)] rounded-2xl px-6 py-5 shadow-2xl border border-black/5 dark:border-white/10 text-center" aria-live="polite"></div>
+                <p class="walk-only absolute bottom-6 left-6 text-[10px] uppercase tracking-[0.25em] opacity-50 hidden lg:block">Scroll or ↑ ↓ to walk · Click a frame to step inside</p>
+
+                <!-- Free-look controls: hold an arrow to walk or turn -->
+                <div class="explore-only absolute left-1/2 -translate-x-1/2 bottom-28 flex items-center gap-1 card rounded-full px-2 py-1.5 shadow-lg border border-black/5 dark:border-white/10" role="group" aria-label="Walk controls">
+                    <button class="pad-btn" data-hold="turnLeft" aria-label="Turn left"><span class="material-symbols-outlined">rotate_left</span></button>
+                    <button class="pad-btn" data-hold="back" aria-label="Step back"><span class="material-symbols-outlined">arrow_downward</span></button>
+                    <button class="pad-btn" data-hold="forward" aria-label="Walk forward"><span class="material-symbols-outlined">arrow_upward</span></button>
+                    <button class="pad-btn" data-hold="turnRight" aria-label="Turn right"><span class="material-symbols-outlined">rotate_right</span></button>
                 </div>
-                <p class="absolute bottom-6 left-6 text-[10px] uppercase tracking-[0.25em] opacity-50 hidden lg:block">Scroll, swipe or ← → to walk · Click a frame to visit it</p>
+                <p class="explore-only absolute bottom-6 left-6 text-[10px] uppercase tracking-[0.25em] opacity-50 hidden lg:block">Drag to look · Click the floor to walk · W A S D · Esc for scroll mode</p>
             </div>
         </div>
-        <div id="ring" class="hidden" aria-hidden="true"><span id="ring-label"></span></div>
+        <div id="ring" class="away" aria-hidden="true"><span id="ring-label"></span></div>
     </section>
 
     <!-- Flat walk -->
     <main id="walk" hidden class="max-w-xl mx-auto px-5 pb-16"></main>
     <div class="flat-ambient" id="flat-ambient" aria-hidden="true"></div>
 
-    <!-- Exhibit (a section on phones, an overlay over the 3D hall) -->
-    <section id="exhibit" aria-labelledby="exhibit-title">
-        <div class="relative px-6 pt-28 pb-48 max-w-3xl mx-auto">
-            <button id="exhibit-close" class="absolute top-6 right-6 w-11 h-11 rounded-full items-center justify-center hover:bg-black/5 dark:hover:bg-white/10" aria-label="Back to the hall">
-                <span class="material-symbols-outlined">close</span>
-            </button>
-            <p class="text-[11px] font-semibold tracking-[0.35em] uppercase text-primary mb-4 text-center">Open walls</p>
-            <h2 id="exhibit-title" class="font-display italic text-4xl md:text-5xl text-center mb-6">Exhibit at Artestoa</h2>
-            <p class="font-light text-base md:text-lg leading-relaxed text-center max-w-xl mx-auto opacity-80">
-                Every empty frame in the hall is waiting for a maker. If you make things by hand (beadwork, textiles, ceramics, wood, leather or metal), your work can hang here, in a gallery of its own.
-            </p>
+    <!-- Exhibit -->
+    <section id="exhibit" class="relative px-6 pt-28 pb-48 max-w-3xl mx-auto">
+        <p class="text-[11px] font-semibold tracking-[0.35em] uppercase text-primary mb-4 text-center">Open walls</p>
+        <h2 class="font-display italic text-4xl md:text-5xl text-center mb-6">Exhibit at Artestoa</h2>
+        <p class="font-light text-base md:text-lg leading-relaxed text-center max-w-xl mx-auto opacity-80">
+            Every empty frame in the hall is waiting for a maker. If you make things by hand (beadwork, textiles, ceramics, wood, leather or metal), your work can hang here, in a gallery of its own.
+        </p>
 
-            <ol class="mt-14 grid md:grid-cols-3 gap-8">
-                <li class="rounded-2xl p-6 border border-black/10 dark:border-white/10">
-                    <p class="font-display italic text-3xl text-primary mb-3">I</p>
-                    <h3 class="font-semibold mb-2">Photograph each piece</h3>
-                    <p class="text-sm font-light opacity-80 leading-relaxed">On a plain backdrop, in soft daylight. A few angles of each piece is perfect.</p>
-                </li>
-                <li class="rounded-2xl p-6 border border-black/10 dark:border-white/10">
-                    <p class="font-display italic text-3xl text-primary mb-3">II</p>
-                    <h3 class="font-semibold mb-2">One folder per piece</h3>
-                    <p class="text-sm font-light opacity-80 leading-relaxed">Name each folder after the piece. Add a line or two about it: what it's made of, and the story behind it.</p>
-                </li>
-                <li class="rounded-2xl p-6 border border-black/10 dark:border-white/10">
-                    <p class="font-display italic text-3xl text-primary mb-3">III</p>
-                    <h3 class="font-semibold mb-2">Tell us about you</h3>
-                    <p class="text-sm font-light opacity-80 leading-relaxed">Your name or studio, where you work, your craft, and a portrait if you'd like one. We'll hang the rest.</p>
-                </li>
-            </ol>
+        <ol class="mt-14 grid md:grid-cols-3 gap-8">
+            <li class="rounded-2xl p-6 border border-black/10 dark:border-white/10">
+                <p class="font-display italic text-3xl text-primary mb-3">I</p>
+                <h3 class="font-semibold mb-2">Photograph each piece</h3>
+                <p class="text-sm font-light opacity-80 leading-relaxed">On a plain backdrop, in soft daylight. A few angles of each piece is perfect.</p>
+            </li>
+            <li class="rounded-2xl p-6 border border-black/10 dark:border-white/10">
+                <p class="font-display italic text-3xl text-primary mb-3">II</p>
+                <h3 class="font-semibold mb-2">One folder per piece</h3>
+                <p class="text-sm font-light opacity-80 leading-relaxed">Name each folder after the piece. Add a line or two about it: what it's made of, and the story behind it.</p>
+            </li>
+            <li class="rounded-2xl p-6 border border-black/10 dark:border-white/10">
+                <p class="font-display italic text-3xl text-primary mb-3">III</p>
+                <h3 class="font-semibold mb-2">Tell us about you</h3>
+                <p class="text-sm font-light opacity-80 leading-relaxed">Your name or studio, where you work, your craft, and a portrait if you'd like one. We'll hang the rest.</p>
+            </li>
+        </ol>
 
-            <div id="exhibit-actions" class="mt-14 flex flex-wrap items-center justify-center gap-3"></div>
-        </div>
+        <div id="exhibit-actions" class="mt-14 flex flex-wrap items-center justify-center gap-3"></div>
     </section>
 
     <!-- Dock -->
@@ -392,6 +397,7 @@
         const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
         const NEUTRAL = ['#d8cfbf', '#b9ad97', '#8c8170']; // light for an empty wall
         const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+        const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
         // ---------- The walk: wings, then each wing's makers, then its open walls ----------
         const wings = artestoa.wings.map((wing, i) => ({
@@ -413,12 +419,15 @@
         $('hall-stats').textContent = `${artestoa.artists.length} ${artestoa.artists.length === 1 ? 'maker' : 'makers'} · ${workCount} works · ${wings.length} wings · ${openCount} open walls`;
 
         // ---------- Portal markup (shared by both layouts) ----------
+        // Element ids are "frame-…", not the address names ("#portal-orneril"), so the browser
+        // never jumps to a frame on its own when the page opens with that address.
         const portalHref = (stop) => (stop.kind === 'maker' ? Artestoa.galleryUrl(stop.artist.slug) : '#exhibit');
+        const frameEl = (stop) => $(`frame-${stop.id}`);
         function portalHtml(stop) {
             if (stop.kind === 'maker') {
                 const a = stop.artist;
                 return `
-                    <a class="portal" id="frame-${stop.id}" href="${portalHref(stop)}" data-stop="${stops.indexOf(stop)}" aria-label="${escapeHtml(a.name)}: ${escapeHtml(a.craft)}">
+                    <a class="portal" id="frame-${stop.id}" href="${portalHref(stop)}" data-stop="${stops.indexOf(stop)}" aria-label="Enter ${escapeHtml(a.name)}'s gallery">
                         <div class="frame"><div class="mat"><img src="${a.cover.src}" alt="${escapeHtml(a.cover.title)}, by ${escapeHtml(a.name)}" draggable="false"/></div></div>
                         <div class="plaque">
                             <span class="block font-display italic text-[17px] leading-tight">${escapeHtml(a.name)}</span>
@@ -442,37 +451,28 @@
             if (stop.kind === 'maker') {
                 const a = stop.artist;
                 return `
-                    <p class="text-[10px] uppercase tracking-[0.3em] opacity-75 mb-2">Wing ${stop.wing.numeral} · ${escapeHtml(stop.wing.title)}</p>
+                    <p class="text-[10px] uppercase tracking-[0.3em] opacity-75 mb-1">Wing ${stop.wing.numeral} · ${escapeHtml(stop.wing.title)}</p>
                     <p class="font-display italic text-3xl leading-tight">${escapeHtml(a.name)}</p>
                     <p class="text-[11px] uppercase tracking-[0.2em] opacity-80 mt-1">${escapeHtml([a.craft, a.location].filter(Boolean).join(' · '))}</p>
-                    <p class="text-sm font-light opacity-90 mt-3">${a.works} works · since ${a.since}</p>
-                    <a href="${portalHref(stop)}" data-enter class="mt-5 inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-5 py-2.5 rounded-full text-sm font-medium hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-colors">
+                    <p class="text-sm font-light opacity-90 mt-2">${a.works} works · since ${a.since}</p>
+                    <a href="${portalHref(stop)}" data-enter class="mt-4 inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-5 py-2.5 rounded-full text-sm font-medium hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-colors">
                         Step inside <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </a>`;
             }
             return `
-                <p class="text-[10px] uppercase tracking-[0.3em] opacity-75 mb-2">Wing ${stop.wing.numeral} · ${escapeHtml(stop.wing.title)}</p>
+                <p class="text-[10px] uppercase tracking-[0.3em] opacity-75 mb-1">Wing ${stop.wing.numeral} · ${escapeHtml(stop.wing.title)}</p>
                 <p class="font-display italic text-2xl leading-tight">This wall is waiting</p>
-                <p class="text-sm font-light opacity-90 mt-3">Make ${escapeHtml(stop.wing.title.toLowerCase())} by hand? This frame could open into your own gallery.</p>
-                <a href="#exhibit" data-enter class="mt-5 inline-flex items-center gap-2 border border-current px-5 py-2.5 rounded-full text-sm font-medium hover:text-primary transition-colors">
+                <p class="text-sm font-light opacity-90 mt-2">Make ${escapeHtml(stop.wing.title.toLowerCase())} by hand? This frame could open into your own gallery.</p>
+                <a href="#exhibit" data-enter class="mt-4 inline-flex items-center gap-2 border border-current px-5 py-2.5 rounded-full text-sm font-medium hover:text-primary transition-colors">
                     Exhibit here <span class="material-symbols-outlined text-[18px]">add</span>
                 </a>`;
         }
 
         // ================= EXHIBIT =================
-        const exhibit = $('exhibit');
         function openExhibit() {
-            if (mode === '3d') {
-                exhibit.classList.add('open');
-                exhibit.scrollTop = 0;
-                $('exhibit-close').focus();
-            } else {
-                exhibit.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
-            }
+            if (exploring) setExploring(false);
+            $('exhibit').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
         }
-        const closeExhibit = () => exhibit.classList.remove('open');
-        $('exhibit-close').addEventListener('click', closeExhibit);
-
         const { email, signupUrl } = artestoa.contact;
         const actions = [];
         if (signupUrl) actions.push(`<a href="${escapeHtml(signupUrl)}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-full text-sm font-medium hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-colors shadow-lg">Apply to exhibit <span class="material-symbols-outlined text-[18px]">north_east</span></a>`);
@@ -492,9 +492,9 @@
             try { sessionStorage.setItem('artestoa:arrival', JSON.stringify({ palette: stop.artist.palette })); } catch {}
             if (reduceMotion) { location.href = portalHref(stop); return; }
             if (mode === '3d') {
-                $('ring').classList.add('hidden');
-                travel(poseFor(stationOf(stop), { close: true }), 560, easeIn);
-                await wait(480);
+                $('ring').classList.add('away');
+                pushInto(placedOf(stop));
+                await wait(560);
             }
             // If animation frames are held back (a background tab, a struggling device), go anyway
             await Promise.race([Wormhole.run({ palette: stop.artist.palette, direction: 'in', duration: 1250 }), wait(2200)]);
@@ -502,35 +502,42 @@
             document.head.insertAdjacentHTML('beforeend', '<style id="no-page-transition">@view-transition { navigation: none; }</style>');
             location.href = portalHref(stop);
         }
-        // Coming back with the browser's back button: close the tunnel, stand back from the frame
+        // Coming back with the browser's back button: close the tunnel and step back from the frame
         addEventListener('pageshow', (e) => {
             if (!e.persisted) return;
             Wormhole.clear();
             $('no-page-transition')?.remove();
             entering = false;
-            if (mode === '3d' && layout) { cancelTravel(); setCamera(poseFor(stations[current])); }
+            if (mode === '3d') { pushTarget = null; if (!exploring) Object.assign(goal, walkPose()); kick(); }
         });
 
-        // ================= 3D HALL =================
+        // ================= 3D CORRIDOR =================
         /*
-         * Stations. The camera is always either standing at a station or travelling between
-         * two of them, in one eased move. Station 0 is the entrance, then one per frame along
-         * the hall, then the far end. Nothing else moves the camera: no scrolling, no hover.
+         * Two ways to move, never at the same time:
+         *  - Walk (default): scrolling slides the camera down the hall. Nothing else moves it.
+         *  - Free look (opt-in, the button at the top right): the page stops scrolling and the
+         *    visitor drags to look around, clicks the floor to walk, holds the arrows (or WASD)
+         *    to walk and turn, and clicks a frame to walk up to it.
          *
          * The camera: #scene's perspective puts the viewer PERSPECTIVE px in front of the
-         * world's origin, looking down -z. A camera at (x, y, z) turned `yaw` degrees
-         * (positive = toward the left wall) is drawn by moving the world the opposite way:
-         *   translateZ(PERSPECTIVE) rotateY(-yaw) translate3d(-x, -y, -z)
+         * world's origin, looking down -z. A camera at (x, y, z), turned `yaw` degrees to the
+         * left and tilted `pitch` degrees up, is drawn by moving the world the opposite way:
+         *   translateZ(PERSPECTIVE) rotateX(pitch) rotateY(-yaw) translate3d(-x, -y, -z)
+         * Every input only changes `goal`; one loop eases the camera toward it, so inputs can
+         * never fight each other.
          */
         const SURFACE_SCALE = 4;
         const PERSPECTIVE = 820;
+        const corridor = $('corridor');
         const scene = $('scene');
         const world = $('world');
         const glow = $('hall-glow');
         let layout = null;
-        let stations = [];
-        let current = 0;
-        const cam = { x: 0, y: 0, z: PERSPECTIVE, yaw: 0 };
+        let t = 0;                       // how far the walk has gone down the hall (scroll), px
+        let exploring = false;
+        const cam = { x: 0, y: 0, z: PERSPECTIVE, yaw: 0, pitch: 0 };
+        const goal = { ...cam };
+        let pushTarget = null;           // set while pushing into a frame on the way through
 
         function build3d() {
             const H = innerHeight;
@@ -547,15 +554,18 @@
                 return s;
             });
             const L = -z + END;            // length of the hall
+            const travel = L - 900;        // the walk stops a little before the back wall
 
             const surf = (cls, w, h, transform) =>
                 `<div class="${cls}" style="width:${w / SURFACE_SCALE}px;height:${h / SURFACE_SCALE}px;transform:${transform} scale(${SURFACE_SCALE})"></div>`;
 
+            // Surfaces start 900px behind the entrance, so free look can turn around
             let html = '';
-            html += surf('floor', W, L, `translate3d(${-W / 2}px, ${H / 2}px, 0) rotateX(-90deg)`);
-            html += surf('ceiling', W, L, `translate3d(${-W / 2}px, ${-H / 2}px, 0) rotateX(-90deg)`);
-            html += surf('wall', L, H, `translate3d(${-W / 2}px, ${-H / 2}px, 0) rotateY(90deg)`);
-            html += surf('wall', L, H, `translate3d(${W / 2}px, ${-H / 2}px, 0) rotateY(90deg)`);
+            html += surf('floor', W, L + 900, `translate3d(${-W / 2}px, ${H / 2}px, 900px) rotateX(-90deg)`);
+            html += surf('ceiling', W, L + 900, `translate3d(${-W / 2}px, ${-H / 2}px, 900px) rotateX(-90deg)`);
+            html += surf('wall', L + 900, H, `translate3d(${-W / 2}px, ${-H / 2}px, 900px) rotateY(90deg)`);
+            html += surf('wall', L + 900, H, `translate3d(${W / 2}px, ${-H / 2}px, 900px) rotateY(90deg)`);
+            html += surf('back-wall-plane', W, H, `translate3d(${-W / 2}px, ${-H / 2}px, 900px)`);
             for (let lz = -400; lz > -L + 300; lz -= 520) {
                 html += `<div class="ceiling-light" style="width:140px;height:26px;transform:translate3d(-70px, ${-H / 2 + 1}px, ${lz}px) rotateX(-90deg)"></div>`;
             }
@@ -584,7 +594,8 @@
             </div>`;
 
             world.innerHTML = html;
-            layout = { H, W, L, placed, fadeables: [...world.querySelectorAll('.fadeable')] };
+            corridor.style.height = `${travel + H}px`;
+            layout = { H, W, L, travel, placed, fadeables: [...world.querySelectorAll('.fadeable')] };
 
             // Each frame's centre in the world, so the camera can stand square in front of it.
             // A panel turns about its wall-side edge (its hinge), so the centre sits half a
@@ -599,249 +610,366 @@
                 p.centre = { x: hingeX + half * Math.cos(rad), y: p.y + p.h / 2, z: p.z - half * Math.sin(rad) };
             });
 
-            stations = [
-                { kind: 'entrance' },
-                ...placed.filter((p) => p.stop.kind !== 'banner').map((p) => ({ kind: 'frame', p })),
-                { kind: 'end' },
-            ];
             $('wing-dots').innerHTML = wings.map((w) => `<button class="wing-dot" data-wing="${w.id}" aria-label="Walk to the ${escapeHtml(w.title)} wing" title="${escapeHtml(w.title)}"></button>`).join('');
         }
+        const placedOf = (stop) => layout.placed.find((p) => p.stop === stop);
 
-        const stationOf = (stop) => stations.findIndex((s) => s.p?.stop === stop);
-
-        // Where the camera stands for a station
-        function poseFor(i, { close = false } = {}) {
-            const s = stations[i];
-            if (s.kind === 'entrance') return { x: 0, y: 0, z: PERSPECTIVE, yaw: 0 };
-            if (s.kind === 'end') return { x: 0, y: 0, z: -layout.L + PERSPECTIVE * 1.15, yaw: 0 };
-            const p = s.p;
+        // Where the camera stands to face a frame square-on (close: pressed right up to it)
+        function facePose(p, close = false) {
             const rad = (p.turn * Math.PI) / 180;
             const n = [Math.sin(rad), Math.cos(rad)];       // the frame's facing direction (x, z)
-            // Far enough that the frame fills ~64% of the height, never past the opposite wall
-            let d = (PERSPECTIVE * p.h) / (0.64 * layout.H);
+            let d = (PERSPECTIVE * p.h) / (0.6 * layout.H);
             const wallX = Math.sign(n[0]) * (layout.W / 2 - 70);
             d = Math.min(d, (wallX - p.centre.x) / n[0]);
-            if (close) d = 110;                              // pressed right up against the frame
-            // Aim a touch low so the frame and plaque sit clear of the controls below
-            const lift = close ? 0 : (0.05 * layout.H * d) / PERSPECTIVE;
-            return { x: p.centre.x + n[0] * d, y: p.centre.y + lift, z: p.centre.z + n[1] * d, yaw: p.turn };
+            if (close) d = 110;
+            // Aim a touch low so the frame and its plaque sit clear of the controls below
+            const lift = close ? 0 : (0.06 * layout.H * d) / PERSPECTIVE;
+            return { x: p.centre.x + n[0] * d, y: p.centre.y + lift, z: p.centre.z + n[1] * d, yaw: p.turn, pitch: 0 };
         }
+        const walkPose = () => ({ x: 0, y: 0, z: PERSPECTIVE - t, yaw: 0, pitch: 0 });
 
-        function setCamera(pose) {
-            Object.assign(cam, pose);
+        // ---------- Drawing the camera ----------
+        function applyCamera() {
             world.style.transform =
-                `translateZ(${PERSPECTIVE}px) rotateY(${(-cam.yaw).toFixed(3)}deg) translate3d(${(-cam.x).toFixed(2)}px, ${(-cam.y).toFixed(2)}px, ${(-cam.z).toFixed(2)}px)`;
-            // Things far down the hall come out of the gloom; banners fade as you pass beneath
+                `translateZ(${PERSPECTIVE}px) rotateX(${cam.pitch.toFixed(3)}deg) rotateY(${(-cam.yaw).toFixed(3)}deg) translate3d(${(-cam.x).toFixed(2)}px, ${(-cam.y).toFixed(2)}px, ${(-cam.z).toFixed(2)}px)`;
+            // Far things come out of the gloom; in the walk, banners fade as you pass beneath them
+            const eye = cam.z - PERSPECTIVE;
             layout.fadeables.forEach((el) => {
-                const ahead = cam.z - Number(el.dataset.z);
-                let o = 1 - Math.max(0, ahead - 2300) / 2200;
-                if (el.classList.contains('banner')) o = Math.min(o, Math.max(0, (ahead - 260) / 320));
-                el.style.opacity = Math.max(0, Math.min(1, o)).toFixed(2);
+                const d = eye - Number(el.dataset.z);
+                let o = 1 - Math.max(0, d - 1500) / 2200;
+                if (el.classList.contains('banner') && !exploring) o = Math.min(o, Math.max(0, (d - 120) / 260));
+                el.style.opacity = clamp(o, 0, 1).toFixed(2);
             });
         }
 
-        // ---------- Travelling: one eased move from wherever the camera is now ----------
-        const easeInOut = (u) => (u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2);
-        const easeIn = (u) => u * u * u;
-        let trip = null;
+        // One loop eases the camera toward `goal`; it sleeps whenever nothing is moving
+        let raf = 0, last = 0;
+        const held = { forward: false, back: false, turnLeft: false, turnRight: false };
+        function loop(now) {
+            const dt = Math.min(50, now - (last || now - 16));
+            last = now;
 
-        function travel(to, duration, ease = easeInOut) {
-            const from = { ...cam };
-            const dist = Math.hypot(to.x - from.x, to.z - from.z);
-            // On longer walks, look down the hall while walking, then turn to the frame
-            const lookAhead = dist > 650 && duration > 700;
-            trip = { from, to, start: performance.now(), duration, ease, lookAhead };
-            if (!trip.raf) trip.raf = requestAnimationFrame(step);
-        }
-        function step(now) {
-            if (!trip) return;
-            const { from, to, start, duration, ease, lookAhead } = trip;
-            const u = Math.min(1, (now - start) / duration);
-            const k = ease(u);
-            let yaw;
-            if (lookAhead) {
-                yaw = u < 0.4 ? from.yaw * (1 - easeInOut(u / 0.4))
-                    : u > 0.6 ? to.yaw * easeInOut((u - 0.6) / 0.4)
-                    : 0;
-            } else {
-                yaw = from.yaw + (to.yaw - from.yaw) * k;
+            // Held arrows / keys walk and turn the goal (free look only)
+            const holding = exploring && !entering && Object.values(held).some(Boolean);
+            if (holding) {
+                if (held.turnLeft) goal.yaw += 0.09 * dt;            // degrees per ms
+                if (held.turnRight) goal.yaw -= 0.09 * dt;
+                const dir = (held.forward ? 1 : 0) - (held.back ? 1 : 0);
+                if (dir) walkGoal(dir * 0.9 * dt, goal.yaw);          // px per ms
             }
-            setCamera({
-                x: from.x + (to.x - from.x) * k,
-                y: from.y + (to.y - from.y) * k,
-                z: from.z + (to.z - from.z) * k,
-                yaw,
+
+            const target = pushTarget || goal;
+            // Looking feels direct; walking glides. In scroll mode the walk itself isn't eased
+            // (scrolling sets the camera's depth directly), only a free-look angle unwinding.
+            const kPos = 1 - Math.exp(-dt / (pushTarget ? 200 : exploring ? 260 : 120));
+            const kAng = 1 - Math.exp(-dt / (exploring ? 90 : 180));
+            let moving = holding;
+            for (const key of ['x', 'y', 'z', 'yaw', 'pitch']) {
+                const k = key === 'yaw' || key === 'pitch' ? kAng : kPos;
+                const diff = target[key] - cam[key];
+                if (Math.abs(diff) > (k === kAng ? 0.01 : 0.15)) { cam[key] += diff * k; moving = true; }
+                else cam[key] = target[key];
+            }
+            applyCamera();
+            if (exploring) updateExploreFocus();
+            raf = moving ? requestAnimationFrame(loop) : 0;
+            if (!moving) last = 0;
+        }
+        const kick = () => { if (!raf) raf = requestAnimationFrame(loop); };
+
+        function pushInto(p) {
+            pushTarget = facePose(p, true);
+            kick();
+        }
+
+        // ================= WALK MODE (scroll) =================
+        function render3d() {
+            if (!layout || exploring || entering) return;   // stepping through: the push owns the camera
+            t = clamp(scrollY - corridor.offsetTop, 0, layout.travel);
+            // Straight down the middle of the hall. Scrolling sets the depth directly, with no
+            // lag; anything left over from free look (a turn, a sidestep) eases back.
+            Object.assign(goal, walkPose());
+            cam.z = goal.z;
+            applyCamera();
+            kick();
+
+            // Hero hangs at the far end on arrival, then gives way as you walk
+            const heroO = Math.max(0, 1 - t / 380);
+            $('hall-hero').style.opacity = heroO.toFixed(2);
+            $('hero-scrim').style.opacity = heroO.toFixed(2);
+            $('hall-hero').style.visibility = t > 380 ? 'hidden' : 'visible';
+
+            // The portal you're facing: the nearest one not yet passed
+            let best = null, bestD = Infinity;
+            layout.placed.forEach((p) => {
+                if (p.stop.kind === 'banner') return;
+                const d = -(p.z + t);
+                if (d > 260 && d < bestD) { best = p; bestD = d; }
             });
-            if (u < 1) trip.raf = requestAnimationFrame(step);
-            else trip = null;
+            setFocus(t < 160 ? null : best, best ? [best.side === 'left' ? 18 : 82, 50] : null);
+
+            // Wing you're in
+            const wingStop = [...layout.placed].reverse().find((p) => p.stop.kind === 'banner' && -(p.z + t) < 700);
+            const wing = wingStop?.stop.wing;
+            $('hud-wing').textContent = wing ? `Wing ${wing.numeral} · ${wing.title}` : '';
+            document.querySelectorAll('.wing-dot').forEach((d) => d.classList.toggle('active', d.dataset.wing === wing?.id));
         }
-        const cancelTravel = () => { if (trip?.raf) cancelAnimationFrame(trip.raf); trip = null; };
+        let scrollRaf = 0;
+        addEventListener('scroll', () => {
+            if (mode !== '3d' || exploring || scrollRaf) return;
+            scrollRaf = requestAnimationFrame(() => { scrollRaf = 0; render3d(); });
+        }, { passive: true });
 
-        // ---------- Going to a station ----------
-        let glowTimer;
-        function goTo(i, { instant = false } = {}) {
-            i = Math.max(0, Math.min(stations.length - 1, i));
-            const prev = current;
-            current = i;
-            const to = poseFor(i);
-            if (instant || reduceMotion) { cancelTravel(); setCamera(to); }
-            else {
-                const dist = Math.hypot(to.x - cam.x, to.z - cam.z) + Math.abs(to.yaw - cam.yaw) * 6;
-                travel(to, Math.min(1700, Math.max(650, 420 + dist * 0.38)));
-            }
-            arriveAt(i, prev);
-        }
+        // Scroll position for standing `ahead` px in front of a stop
+        const scrollFor = (stop, ahead = 620) => {
+            const p = placedOf(stop);
+            return corridor.offsetTop + clamp(-p.z - ahead, 0, layout.travel);
+        };
 
-        // Everything that depends on where you're standing (not on the camera mid-walk)
-        function arriveAt(i) {
-            const s = stations[i];
-            const stop = s.p?.stop;
-
-            $('hall-hero').classList.toggle('away', i !== 0);
-            $('hero-scrim').classList.toggle('away', i !== 0);
-            $('enter-icon').textContent = 'east';
-
+        // ---------- Focus: the frame the card and the light are about ----------
+        let focused = null, glowTimer;
+        function setFocus(p, glowAt) {
+            const stop = p?.stop || null;
+            if (stop === focused) return;
             document.querySelectorAll('.portal.lit').forEach((el) => el.classList.remove('lit'));
+            focused = stop;
             const card = $('focus-card');
             clearTimeout(glowTimer);
-            if (stop) {
-                const el = $(`frame-${stop.id}`);
-                const [r, g, b] = Artestoa.rgb(Artestoa.vivid(paletteOf(stop))[0] || paletteOf(stop)[0]);
-                el.style.setProperty('--lit', `rgba(${r},${g},${b},.45)`);
-                el.classList.add('lit');
-                card.innerHTML = describe(stop);
-                card.classList.remove('away');
-                glowTimer = setTimeout(() => {
-                    glow.style.background = glowFor({ palette: paletteOf(stop) }, { at: [50, 48] });
-                    glow.classList.add('on');
-                }, 250);
-            } else {
-                card.classList.add('away');
+            if (!stop) {
+                card.classList.add('hidden-card');
                 glow.classList.remove('on');
+                return;
             }
+            card.innerHTML = describe(stop);
+            card.classList.remove('hidden-card');
+            const el = frameEl(stop);
+            const [r, g, b] = Artestoa.rgb(Artestoa.vivid(paletteOf(stop))[0] || paletteOf(stop)[0]);
+            el.style.setProperty('--lit', `rgba(${r},${g},${b},.45)`);
+            el.classList.add('lit');
+            // Repainted only when focus changes, after a short pause, so moving briskly past
+            // several frames stays smooth
+            glowTimer = setTimeout(() => {
+                glow.style.background = glowFor({ palette: paletteOf(stop) }, { at: glowAt });
+                glow.classList.add('on');
+            }, 120);
+        }
+        $('focus-card').addEventListener('click', (e) => {
+            if (!e.target.closest('[data-enter]') || !focused) return;
+            e.preventDefault();
+            stepInto(focused);
+        });
 
-            const wing = stop?.wing;
-            $('hud-wing').textContent = wing ? `Wing ${wing.numeral} · ${wing.title}` : s.kind === 'end' ? 'The end of the hall' : '';
-            document.querySelectorAll('.wing-dot').forEach((d) => d.classList.toggle('active', d.dataset.wing === wing?.id));
-            const frames = stations.length - 2;
-            $('hud-count').textContent = s.kind === 'entrance' ? 'Entrance' : s.kind === 'end' ? 'The end' : `${i} of ${frames}`;
-            $('step-prev').disabled = i === 0;
-            $('step-next').disabled = i === stations.length - 1;
-
-            // Remember the spot, so coming back from a gallery returns here
-            const hash = stop ? `#${stop.id}` : s.kind === 'end' ? '#end' : '';
-            try { history.replaceState(history.state, '', `${location.pathname}${location.search}${hash}`); } catch {}
+        // ================= FREE LOOK =================
+        // Keep the free-look camera inside the hall
+        function clampGoal() {
+            goal.x = clamp(goal.x, -layout.W / 2 + 90, layout.W / 2 - 90);
+            goal.z = clamp(goal.z, -layout.L + PERSPECTIVE + 260, PERSPECTIVE + 600);
+            goal.pitch = clamp(goal.pitch, -18, 18);
+        }
+        // Step the goal `dist` px along a heading (yaw degrees; 0 = straight down the hall)
+        function walkGoal(dist, heading) {
+            const rad = (heading * Math.PI) / 180;
+            goal.x += -Math.sin(rad) * dist;
+            goal.z += -Math.cos(rad) * dist;
+            clampGoal();
         }
 
-        // The scene never scrolls: the camera does the moving. Focus (e.g. tabbing to a frame
-        // deep in the hall) can still nudge an overflow:hidden box, so snap it straight back.
-        scene.addEventListener('scroll', () => { scene.scrollTop = 0; scene.scrollLeft = 0; });
+        // The frame you're looking at: in front of you, near the centre of the view, close enough
+        function lookedAt() {
+            const rad = (cam.yaw * Math.PI) / 180;
+            const view = [-Math.sin(rad), -Math.cos(rad)];
+            // The camera position is the eye (translate(-cam) brings it to the viewer's spot)
+            const eye = [cam.x, cam.z];
+            let best = null, bestScore = Infinity;
+            layout.placed.forEach((p) => {
+                if (!p.centre) return;
+                const v = [p.centre.x - eye[0], p.centre.z - eye[1]];
+                const dist = Math.hypot(v[0], v[1]);
+                if (dist > 1500 || dist < 60) return;
+                const angle = Math.acos(clamp((v[0] * view[0] + v[1] * view[1]) / dist, -1, 1)) * 180 / Math.PI;
+                if (angle > 22) return;
+                const score = angle * 40 + dist;
+                if (score < bestScore) { best = p; bestScore = score; }
+            });
+            return best;
+        }
+        // Close enough to a frame for a click to step through it (otherwise it walks you there)
+        const ENTER_REACH = 950;
+        const canEnter = (p) => p && p.stop === focused && Math.hypot(p.centre.x - cam.x, p.centre.z - cam.z) < ENTER_REACH;
 
-        // ---------- Input: one gesture, one station ----------
-        // Wheel and trackpad: a flick moves one station, and the rest of that flick's
-        // momentum is ignored, so a single swipe never skips through the hall.
-        let wheelSum = 0, wheelLockedUntil = 0, wheelIdle;
+        // The card and the coloured light follow whichever frame you're looking at
+        function updateExploreFocus() {
+            const p = lookedAt();
+            if ((p?.stop || null) === focused) return;
+            let at = [50, 48];
+            if (p) {
+                const r = p.el.getBoundingClientRect();
+                at = [clamp(((r.left + r.width / 2) / innerWidth) * 100, 10, 90), clamp(((r.top + r.height / 2) / innerHeight) * 100, 15, 85)];
+            }
+            setFocus(p, at);
+        }
+
+        function setExploring(on) {
+            if (on === exploring || mode !== '3d') return;
+            exploring = on;
+            root.classList.toggle('exploring', on);
+            try { sessionStorage.setItem('artestoa:hall-mode', on ? 'explore' : 'walk'); } catch {}
+            $('mode-toggle').setAttribute('aria-pressed', String(on));
+            $('mode-icon').textContent = on ? 'swipe_vertical' : '360';
+            $('mode-label').textContent = on ? 'Scroll mode' : 'Free look';
+            Object.keys(held).forEach((k) => (held[k] = false));
+            document.querySelectorAll('.pad-btn.held').forEach((b) => b.classList.remove('held'));
+            focused = undefined;   // force the card and light to refresh in the new mode
+            if (on) {
+                // Start from exactly where the walk had got to
+                Object.assign(goal, { ...cam });
+                $('hall-hero').style.visibility = 'hidden';
+                $('hero-scrim').style.opacity = '0';
+                $('hud-wing').textContent = 'Free look';
+                updateExploreFocus();
+            } else {
+                // Back to scrolling at the same depth: the page scrolls to match, and the camera
+                // swings back to face down the hall
+                $('ring').classList.add('away');
+                const depth = clamp(PERSPECTIVE - cam.z, 0, layout.travel);
+                scrollTo({ top: corridor.offsetTop + depth, behavior: 'instant' });
+                render3d();
+            }
+            kick();
+        }
+        $('mode-toggle').addEventListener('click', () => setExploring(!exploring));
+
+        // Dragging looks around; a press without a drag is a click (handled below)
+        let drag = null, dragged = false;
+        scene.addEventListener('pointerdown', (e) => {
+            if (!exploring || entering || e.button !== 0 || e.target.closest('#hud a, #hud button, #focus-card')) return;
+            drag = { x: e.clientX, y: e.clientY, yaw: goal.yaw, pitch: goal.pitch, id: e.pointerId };
+            dragged = false;
+        });
+        addEventListener('pointermove', (e) => {
+            if (exploring) moveRing(e);
+            if (!drag || e.pointerId !== drag.id) return;
+            const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+            if (!dragged && Math.hypot(dx, dy) < 5) return;
+            if (!dragged) { dragged = true; try { scene.setPointerCapture(e.pointerId); } catch {} }
+            // Grab the view and move it with your hand
+            goal.yaw = drag.yaw + dx * 0.22;
+            goal.pitch = clamp(drag.pitch + dy * 0.12, -18, 18);
+            kick();
+        });
+        addEventListener('pointerup', () => {
+            if (!drag) return;
+            drag = null;
+            // Let the click that follows a drag know it was a drag
+            setTimeout(() => (dragged = false), 0);
+        });
+
+        // Wheel in free look walks forward and back along the view
         scene.addEventListener('wheel', (e) => {
+            if (!exploring) return;
             e.preventDefault();
             if (entering) return;
-            const now = performance.now();
-            clearTimeout(wheelIdle);
-            wheelIdle = setTimeout(() => { wheelSum = 0; wheelLockedUntil = 0; }, 200);
-            if (now < wheelLockedUntil) { wheelLockedUntil = now + 200; return; }
-            wheelSum += Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
-            if (Math.abs(wheelSum) > 40) {
-                goTo(current + Math.sign(wheelSum));
-                wheelSum = 0;
-                wheelLockedUntil = now + 450;
-            }
+            walkGoal(-e.deltaY * 1.4, goal.yaw);
+            kick();
         }, { passive: false });
 
-        // Touch (tablets): a swipe moves one station
-        let touchStart = null;
-        scene.addEventListener('touchstart', (e) => { touchStart = [e.touches[0].clientX, e.touches[0].clientY]; }, { passive: true });
-        scene.addEventListener('touchend', (e) => {
-            if (!touchStart || entering) return;
-            const dx = e.changedTouches[0].clientX - touchStart[0];
-            const dy = e.changedTouches[0].clientY - touchStart[1];
-            touchStart = null;
-            const d = Math.abs(dy) > Math.abs(dx) ? -dy : -dx;
-            if (Math.abs(d) > 40) goTo(current + Math.sign(d));
-        });
-
-        addEventListener('keydown', (e) => {
-            if (mode !== '3d' || entering || !$('sheet').hidden) return;
-            if (exhibit.classList.contains('open')) { if (e.key === 'Escape') closeExhibit(); return; }
-            if (/input|textarea/i.test(document.activeElement.tagName)) return;
-            const next = ['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key);
-            const prev = ['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key);
-            if (next || prev) { e.preventDefault(); goTo(current + (next ? 1 : -1)); }
-            if (e.key === 'Home') goTo(0);
-            if (e.key === 'End') goTo(stations.length - 1);
-            if (e.key === 'Enter' && stations[current].p && document.activeElement === document.body) stepInto(stations[current].p.stop);
-        });
-
-        // Tabbing onto a frame walks to it, so keyboard visitors see what they've focused.
-        // Only keyboard focus: a mouse click also focuses the link (on mousedown), and walking
-        // then would make the click that follows look like "enter".
-        world.addEventListener('focusin', (e) => {
-            const el = e.target.closest('.portal');
-            if (!el || mode !== '3d' || entering || !el.matches(':focus-visible')) return;
-            const i = stationOf(stops[Number(el.dataset.stop)]);
-            if (i !== current) goTo(i);
-        });
-
-        $('step-prev').addEventListener('click', () => goTo(current - 1));
-        $('step-next').addEventListener('click', () => goTo(current + 1));
-        $('hud-mark').addEventListener('click', (e) => { e.preventDefault(); goTo(0); });
-
-        // Clicks in the hall: a frame you're standing at opens; any other frame, you walk to
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('[data-exhibit]')) { e.preventDefault(); return openExhibit(); }
-            const enter = e.target.closest('#focus-card [data-enter]');
-            const el = enter ? null : e.target.closest('.portal');
-            if (!enter && !el) return;
-            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-            e.preventDefault();
-            if (enter) return stepInto(stations[current].p.stop);
-            const stop = stops[Number(el.dataset.stop)];
-            if (mode !== '3d') return stepInto(stop);
-            const i = stationOf(stop);
-            if (i === current) stepInto(stop);
-            else goTo(i);
+        // Held arrows on screen
+        document.querySelectorAll('[data-hold]').forEach((btn) => {
+            const key = btn.dataset.hold;
+            const press = (e) => { e.preventDefault(); held[key] = true; btn.classList.add('held'); kick(); };
+            const release = () => { held[key] = false; btn.classList.remove('held'); };
+            btn.addEventListener('pointerdown', press);
+            btn.addEventListener('pointerup', release);
+            btn.addEventListener('pointerleave', release);
+            btn.addEventListener('pointercancel', release);
         });
 
         // ---------- The ring ----------
-        // Follows the pointer and names what a click will do. It never moves the camera.
         const ring = $('ring');
         const ringLabel = $('ring-label');
-        let ringTarget = [0, 0], ringPos = null, ringRaf = 0, aimed = null;
+        let ringTarget = [0, 0], ringPos = null, ringRaf = 0;
         function ringTick() {
-            ringPos = ringPos ? ringPos.map((v, k) => v + (ringTarget[k] - v) * 0.35) : [...ringTarget];
+            ringPos = ringPos ? ringPos.map((v, k) => v + (ringTarget[k] - v) * 0.4) : [...ringTarget];
             ring.style.transform = `translate3d(${ringPos[0]}px, ${ringPos[1]}px, 0) translate(-50%, -50%)`;
             const still = Math.abs(ringPos[0] - ringTarget[0]) + Math.abs(ringPos[1] - ringTarget[1]) < 0.3;
             ringRaf = still ? 0 : requestAnimationFrame(ringTick);
         }
-        function labelFor(target) {
+        function ringLabelFor(target) {
+            if (drag && dragged) return 'Look';
             if (target.closest('[data-exhibit]')) return 'Exhibit';
             const slot = target.closest('.portal-slot');
-            if (!slot) return '';
-            const stop = layout.placed[Number(slot.dataset.i)].stop;
-            if (stationOf(stop) !== current) return 'Visit';
-            return stop.kind === 'maker' ? 'Enter' : 'Exhibit';
+            if (!slot) return 'Walk';
+            const p = layout.placed[Number(slot.dataset.i)];
+            if (!canEnter(p)) return 'Visit';
+            return p.stop.kind === 'maker' ? 'Enter' : 'Exhibit';
         }
-        scene.addEventListener('mousemove', (e) => {
-            if (mode !== '3d' || !finePointer || entering) return;
-            const overControl = e.target.closest('#hud a, #hud button, #focus-card');
-            ring.classList.toggle('hidden', Boolean(overControl));
-            const label = overControl ? '' : labelFor(e.target);
-            ringLabel.textContent = label;
+        function moveRing(e) {
+            if (!finePointer || entering) return;
+            const inScene = Boolean(e.target.closest?.('#scene'));
+            const overControl = e.target.closest?.('#hud a, #hud button, #focus-card');
+            ring.classList.toggle('away', Boolean(overControl) || !inScene);
+            const label = overControl || !inScene ? '' : ringLabelFor(e.target);
+            if (ringLabel.textContent !== label) ringLabel.textContent = label;
             ring.classList.toggle('labelled', Boolean(label));
-            const slot = overControl ? null : e.target.closest('.portal-slot');
-            if (slot !== aimed) { aimed?.classList.remove('aimed'); slot?.classList.add('aimed'); aimed = slot; }
             ringTarget = [e.clientX, e.clientY];
             if (!ringRaf) ringRaf = requestAnimationFrame(ringTick);
+        }
+        scene.addEventListener('mouseleave', () => ring.classList.add('away'));
+
+        // ================= CLICKS =================
+        document.addEventListener('click', (e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+            if (e.target.closest('[data-exhibit]')) { e.preventDefault(); return openExhibit(); }
+            const el = e.target.closest('.portal');
+
+            if (exploring && e.target.closest('#scene') && !e.target.closest('#hud a, #hud button, #focus-card')) {
+                e.preventDefault();
+                if (dragged || entering) return;
+                if (el) {
+                    // A frame: walk up to face it, or step in if you're already there looking at it
+                    const stop = stops[Number(el.dataset.stop)];
+                    if (canEnter(placedOf(stop))) return stepInto(stop);
+                    Object.assign(goal, facePose(placedOf(stop)));
+                    return kick();
+                }
+                // The floor (or anywhere else): walk toward where you clicked, turning partway
+                const offset = Math.atan((e.clientX - innerWidth / 2) / PERSPECTIVE) * 180 / Math.PI;
+                const heading = goal.yaw - offset;
+                goal.yaw -= offset * 0.5;
+                walkGoal(560, heading);
+                return kick();
+            }
+
+            if (!el) return;
+            e.preventDefault();
+            stepInto(stops[Number(el.dataset.stop)]);
         });
-        scene.addEventListener('mouseleave', () => ring.classList.add('hidden'));
+
+        // ================= KEYBOARD =================
+        const KEYS = { w: 'forward', arrowup: 'forward', s: 'back', arrowdown: 'back', a: 'turnLeft', arrowleft: 'turnLeft', d: 'turnRight', arrowright: 'turnRight' };
+        addEventListener('keydown', (e) => {
+            if (mode !== '3d' || !$('sheet').hidden || /input|textarea/i.test(document.activeElement.tagName) || entering) return;
+            if (exploring) {
+                const key = KEYS[e.key.toLowerCase()];
+                if (key) { e.preventDefault(); held[key] = true; kick(); }
+                if (e.key === 'Escape') setExploring(false);
+                if (e.key === 'Enter' && focused) stepInto(focused);
+                return;
+            }
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const down = e.key === 'ArrowDown';
+                const ahead = portals.filter((p) => (down ? p !== focused && scrollFor(p) > scrollY + 4 : scrollFor(p) < scrollY - 4));
+                const target = down ? ahead[0] : ahead[ahead.length - 1];
+                scrollTo({ top: target ? scrollFor(target) : (down ? $('exhibit').offsetTop : corridor.offsetTop), behavior: 'smooth' });
+            }
+            if (e.key === 'Enter' && focused && document.activeElement === document.body) stepInto(focused);
+        });
+        addEventListener('keyup', (e) => {
+            const key = KEYS[e.key.toLowerCase()];
+            if (key) held[key] = false;
+        });
+        addEventListener('blur', () => Object.keys(held).forEach((k) => (held[k] = false)));
 
         // ================= FLAT WALK =================
         function buildFlat() {
@@ -887,25 +1015,31 @@
         function setMode() {
             const next = wants3d() ? '3d' : 'flat';
             if (next === mode) {
-                if (mode === '3d') { build3d(); cancelTravel(); setCamera(poseFor(current)); arriveAt(current); }
+                if (mode === '3d') {
+                    build3d();
+                    focused = undefined;
+                    if (exploring) { clampGoal(); Object.assign(cam, goal); applyCamera(); updateExploreFocus(); }
+                    else render3d();
+                }
                 return;
             }
+            if (mode === '3d' && exploring) setExploring(false);
             mode = next;
-            root.classList.toggle('hall-3d', mode === '3d');
             root.classList.toggle('fine-pointer', finePointer);
-            $('corridor').hidden = mode !== '3d';
+            corridor.hidden = mode !== '3d';
             $('walk').hidden = mode !== 'flat';
             if (mode === '3d') {
-                // Hero hangs over the vanishing point at the entrance
-                hero.className = 'hud-fade absolute inset-x-0 top-[18vh] text-center px-6';
+                // Hero sits over the vanishing point
+                hero.className = 'absolute inset-x-0 top-[18vh] text-center px-6';
                 $('hud').prepend(hero);
                 build3d();
-                goTo(stationFromHash(), { instant: true });
-                requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add('hall-ready')));
+                render3d();
+                Object.assign(cam, goal);
+                applyCamera();
             } else {
-                closeExhibit();
-                root.classList.remove('hall-ready');
                 hero.className = 'min-h-[88vh] flex flex-col items-center justify-center text-center px-6';
+                hero.style.opacity = '';
+                hero.style.visibility = '';
                 document.body.prepend(hero);
                 buildFlat();
             }
@@ -915,8 +1049,10 @@
 
         // ================= WINGS, ENTRANCE =================
         function walkToWing(id) {
+            const banner = stops.find((s) => s.kind === 'banner' && s.wing.id === id);
             const first = stops.find((s) => s.kind !== 'banner' && s.wing.id === id);
-            if (mode === '3d') goTo(stationOf(first));
+            if (mode === '3d' && exploring) { Object.assign(goal, facePose(placedOf(first))); kick(); }
+            else if (mode === '3d') scrollTo({ top: scrollFor(banner, 420), behavior: reduceMotion ? 'auto' : 'smooth' });
             else document.querySelectorAll('#walk header')[wings.findIndex((w) => w.id === id)]?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
         }
         $('wing-dots').addEventListener('click', (e) => {
@@ -925,8 +1061,13 @@
         });
         $('enter-hall').addEventListener('click', (e) => {
             e.preventDefault();
-            if (mode === '3d') goTo(1);
+            if (mode === '3d') scrollTo({ top: scrollFor(portals[0]), behavior: 'smooth' });
             else $('walk').scrollIntoView({ behavior: 'smooth' });
+        });
+        $('hud-mark').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (exploring) { Object.assign(goal, { x: 0, y: 0, z: PERSPECTIVE, yaw: 0, pitch: 0 }); kick(); }
+            else scrollTo({ top: 0, behavior: 'smooth' });
         });
 
         // ================= DOCK & SHEET =================
@@ -938,12 +1079,12 @@
             $('sheet-title').textContent = title;
             sheetList.innerHTML = html;
             sheet.hidden = false;
-            if (mode !== '3d') document.body.style.overflow = 'hidden';
+            if (!exploring) document.body.style.overflow = 'hidden';
             sheet.querySelector('[data-close]:not(.absolute)').focus();
         }
         function closeSheet() {
             sheet.hidden = true;
-            if (mode !== '3d') document.body.style.overflow = '';
+            if (!exploring) document.body.style.overflow = '';
             lastFocus?.focus();
         }
         sheet.addEventListener('click', (e) => {
@@ -987,28 +1128,33 @@
         }
 
         // ================= START =================
-        // index.html#portal-<slug> (back from a gallery) starts in front of that frame
-        function stationFromHash() {
-            if (location.hash === '#end') return stations.length - 1;
-            const stop = portals.find((p) => `#${p.id}` === location.hash);
-            return stop ? Math.max(0, stationOf(stop)) : 0;
-        }
-
         setMode();
         syncSaved();
         addEventListener('pageshow', syncSaved);
         addEventListener('storage', syncSaved);
 
-        if (location.hash === '#exhibit') openExhibit();
-        else if (mode === 'flat') {
-            // Jump to the frame, and again once images and fonts have settled the layout
+        // Arriving at index.html#portal-<slug> (back from a gallery): stand in front of that
+        // frame, in whichever mode the visitor was using
+        let wasExploring = false;
+        try { wasExploring = sessionStorage.getItem('artestoa:hall-mode') === 'explore'; } catch {}
+        function arrive() {
+            if (location.hash === '#exhibit') return $('exhibit').scrollIntoView();
             const stop = portals.find((p) => `#${p.id}` === location.hash);
-            const jump = () => $(`frame-${stop.id}`)?.scrollIntoView({ block: 'center', behavior: 'instant' });
-            if (stop) {
-                jump();
-                if (document.readyState !== 'complete') addEventListener('load', jump, { once: true });
+            if (mode === '3d') {
+                if (exploring) return;
+                if (stop) { scrollTo({ top: scrollFor(stop), behavior: 'instant' }); render3d(); Object.assign(cam, goal); applyCamera(); }
+                // Free look is only restored on the way back from a gallery; any fresh visit or
+                // reload starts in scroll mode
+                if (wasExploring && stop) {
+                    setExploring(true);
+                    if (stop) { Object.assign(goal, facePose(placedOf(stop))); Object.assign(cam, goal); applyCamera(); updateExploreFocus(); }
+                }
+            } else if (stop) {
+                frameEl(stop)?.scrollIntoView({ block: 'center', behavior: 'instant' });
             }
         }
+        arrive();
+        if (document.readyState !== 'complete') addEventListener('load', arrive, { once: true });
     })();
     </script>
 </body>
