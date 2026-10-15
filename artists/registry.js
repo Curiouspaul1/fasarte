@@ -1,5 +1,5 @@
 /*
- * Artestoa: the hall's registry.
+ * Fasarte: the hall's registry.
  *
  * The hall reads only this file, so it stays light however many galleries there are.
  * Each maker's full catalogue lives in artists/<slug>/catalogue.js and is loaded only
@@ -14,18 +14,18 @@
  *   2. Add an entry to `artists` below. `cover` is the piece that hangs in the hall.
  *   3. Lower that wing's `openWalls` by one if you want the hall to stay the same length.
  */
-const artestoa = {
-    name: "Artestoa",
+const fasarte = {
+    name: "Fasarte",
     tagline: "A hall of handcraft",
 
-    // The hall's own domain. Galleries are paths on it (artestoa.com/orneril); once
-    // wildcard DNS is set up they also answer on subdomains (orneril.artestoa.com).
-    domain: "artestoa.com",
+    // The hall's own domain. Galleries are paths on it (fasarte.com/orneril); once
+    // wildcard DNS is set up they also answer on subdomains (orneril.fasarte.com).
+    domain: "fasarte.com",
 
     // Where the empty portals send makers who want to exhibit. Either can be left empty;
     // whichever is set becomes a button. (Not filled in yet.)
     contact: {
-        email: "",      // e.g. "hello@artestoa.com": shown as "Contact the curator"
+        email: "",      // e.g. "hello@fasarte.com": shown as "Contact the curator"
         signupUrl: "",  // e.g. a form link: shown as "Apply to exhibit"
     },
 

@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Artestoa | A Hall of Handcraft</title>
-    <meta name="description" content="Artestoa: a hall of handcraft. Walk the corridor; every frame on its walls is a doorway into a maker's own gallery."/>
+    <title>Fasarte | A Hall of Handcraft</title>
+    <meta name="description" content="Fasarte: a hall of handcraft. Walk the corridor; every frame on its walls is a doorway into a maker's own gallery."/>
 
     <!-- Links from before Orneril joined the hall (index.html#w-…, #room-…, #about) go to its gallery -->
     <script>
@@ -344,7 +344,9 @@
     <!-- Hero: hangs over the corridor's vanishing point (3D) or opens the walk (flat) -->
     <header id="hall-hero" class="text-center px-6">
         <p class="text-[11px] font-semibold tracking-[0.4em] uppercase opacity-70 mb-5">Welcome to</p>
-        <h1 class="wordmark text-7xl md:text-[7.5rem] leading-none mb-5">arte·stoa</h1>
+        <h1 class="wordmark text-7xl md:text-[7.5rem] leading-none mb-3">fas·arte</h1>
+        <!-- The name: Hausa "fasaha" (art, skill, craftsmanship) joined to "arte" -->
+        <p class="font-display italic text-sm md:text-base opacity-70 mb-5"><span lang="ha">fasaha</span> + <span lang="es">arte</span>: art, skill and craft</p>
         <p class="text-sm md:text-base font-light max-w-md mx-auto opacity-80 leading-relaxed" id="hall-intro"></p>
         <p id="hall-stats" class="mt-6 text-[11px] uppercase tracking-[0.25em] opacity-60"></p>
         <a href="#" id="enter-hall" class="mt-8 inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-full text-sm font-medium hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-colors shadow-lg">
@@ -361,7 +363,7 @@
             <!-- Softens the far end of the hall behind the welcome text, then lifts as you walk -->
             <div id="hero-scrim" aria-hidden="true"></div>
             <div id="hud">
-                <a href="#" id="hud-mark" class="absolute top-5 left-6 wordmark text-xl opacity-80 hover:opacity-100">arte·stoa</a>
+                <a href="#" id="hud-mark" class="absolute top-5 left-6 wordmark text-xl opacity-80 hover:opacity-100">fas·arte</a>
                 <p id="hud-wing" class="absolute top-6 left-1/2 -translate-x-1/2 text-[11px] uppercase tracking-[0.3em] opacity-70 whitespace-nowrap"></p>
 
                 <!-- Switch between scrolling down the hall and free look -->
@@ -394,7 +396,7 @@
     <!-- Exhibit -->
     <section id="exhibit" class="relative px-6 pt-28 pb-48 max-w-3xl mx-auto">
         <p class="text-[11px] font-semibold tracking-[0.35em] uppercase text-primary mb-4 text-center">Open walls</p>
-        <h2 class="font-display italic text-4xl md:text-5xl text-center mb-6">Exhibit at Artestoa</h2>
+        <h2 class="font-display italic text-4xl md:text-5xl text-center mb-6">Exhibit at Fasarte</h2>
         <p class="font-light text-base md:text-lg leading-relaxed text-center max-w-xl mx-auto opacity-80">
             Every empty frame in the hall is waiting for a maker. If you make things by hand (beadwork, textiles, ceramics, wood, leather or metal), your work can hang here, in a gallery of its own.
         </p>
@@ -455,12 +457,12 @@
     </div>
 
     <script src="/artists/registry.js"></script>
-    <script src="/core/artestoa.js"></script>
+    <script src="/core/fasarte.js"></script>
     <script src="/core/wormhole.js"></script>
     <script src="/core/sound.js"></script>
     <script>
     (() => {
-        const { escapeHtml, glowFor } = Artestoa;
+        const { escapeHtml, glowFor } = Fasarte;
         const $ = (id) => document.getElementById(id);
         document.getElementById('sound-slot').append(Sound.button('rounded-full opacity-80 hover:text-primary hover:opacity-100 transition-colors'));
         const root = document.documentElement;
@@ -472,10 +474,10 @@
         const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
         // ---------- The walk: wings, then each wing's makers, then its open walls ----------
-        const wings = artestoa.wings.map((wing, i) => ({
+        const wings = fasarte.wings.map((wing, i) => ({
             ...wing,
             numeral: ROMAN[i],
-            makers: artestoa.artists.filter((a) => a.wing === wing.id),
+            makers: fasarte.artists.filter((a) => a.wing === wing.id),
         }));
         const stops = [];
         wings.forEach((wing) => {
@@ -486,14 +488,14 @@
         const portals = stops.filter((s) => s.kind !== 'banner');
 
         const openCount = portals.filter((p) => p.kind === 'open').length;
-        const workCount = artestoa.artists.reduce((n, a) => n + a.works, 0);
-        $('hall-intro').textContent = `${artestoa.tagline}. Walk the corridor: every frame on these walls is a doorway into a maker's own gallery.`;
-        $('hall-stats').textContent = `${artestoa.artists.length} ${artestoa.artists.length === 1 ? 'maker' : 'makers'} · ${workCount} works · ${wings.length} wings · ${openCount} open walls`;
+        const workCount = fasarte.artists.reduce((n, a) => n + a.works, 0);
+        $('hall-intro').textContent = `${fasarte.tagline}. Walk the corridor: every frame on these walls is a doorway into a maker's own gallery.`;
+        $('hall-stats').textContent = `${fasarte.artists.length} ${fasarte.artists.length === 1 ? 'maker' : 'makers'} · ${workCount} works · ${wings.length} wings · ${openCount} open walls`;
 
         // ---------- Portal markup (shared by both layouts) ----------
         // Element ids are "frame-…", not the address names ("#portal-orneril"), so the browser
         // never jumps to a frame on its own when the page opens with that address.
-        const portalHref = (stop) => (stop.kind === 'maker' ? Artestoa.galleryUrl(stop.artist.slug) : '#exhibit');
+        const portalHref = (stop) => (stop.kind === 'maker' ? Fasarte.galleryUrl(stop.artist.slug) : '#exhibit');
         const frameEl = (stop) => $(`frame-${stop.id}`);
         function portalHtml(stop) {
             if (stop.kind === 'maker') {
@@ -521,7 +523,7 @@
         // The aura's three colours: the maker's vivid ones first (an open wall gets warm gilt)
         function auraColours(stop) {
             const pal = stop.kind === 'maker' ? stop.artist.palette : ['#e8cb86', '#f4e0a6', '#b08444'];
-            const lead = [...Artestoa.vivid(pal), ...pal];
+            const lead = [...Fasarte.vivid(pal), ...pal];
             return `--c1:${lead[0]};--c2:${lead[1] || lead[0]};--c3:${lead[2] || lead[0]}`;
         }
 
@@ -551,13 +553,13 @@
             if (exploring) setExploring(false);
             $('exhibit').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
         }
-        const { email, signupUrl } = artestoa.contact;
+        const { email, signupUrl } = fasarte.contact;
         const actions = [];
         if (signupUrl) actions.push(`<a href="${escapeHtml(signupUrl)}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-full text-sm font-medium hover:bg-primary dark:hover:bg-primary dark:hover:text-white transition-colors shadow-lg">Apply to exhibit <span class="material-symbols-outlined text-[18px]">north_east</span></a>`);
-        if (email) actions.push(`<a href="mailto:${escapeHtml(email)}?subject=${encodeURIComponent('Exhibiting at Artestoa')}" class="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium border border-current hover:text-primary transition-colors">Contact the curator <span class="material-symbols-outlined text-[18px]">mail</span></a>`);
+        if (email) actions.push(`<a href="mailto:${escapeHtml(email)}?subject=${encodeURIComponent('Exhibiting at Fasarte')}" class="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium border border-current hover:text-primary transition-colors">Contact the curator <span class="material-symbols-outlined text-[18px]">mail</span></a>`);
         $('exhibit-actions').innerHTML = actions.length
             ? actions.join('')
-            : `<p class="text-sm opacity-70 text-center">Applications open soon. In the meantime, ask whoever shared Artestoa with you.</p>`;
+            : `<p class="text-sm opacity-70 text-center">Applications open soon. In the meantime, ask whoever shared Fasarte with you.</p>`;
 
         // ================= STEPPING THROUGH A PORTAL =================
         // The camera pushes into the frame, the wormhole carries the visitor through, and the
@@ -567,7 +569,7 @@
             if (stop.kind !== 'maker') return openExhibit();
             if (entering) return;
             entering = true;
-            try { sessionStorage.setItem('artestoa:arrival', JSON.stringify({ palette: stop.artist.palette })); } catch {}
+            try { sessionStorage.setItem('fasarte:arrival', JSON.stringify({ palette: stop.artist.palette })); } catch {}
             if (reduceMotion) { location.href = portalHref(stop); return; }
             Sound.portal(mode === '3d' ? 1.8 : 1.25);
             if (mode === '3d') {
@@ -824,7 +826,7 @@
             card.innerHTML = describe(stop);
             card.classList.remove('hidden-card');
             const el = frameEl(stop);
-            const [r, g, b] = Artestoa.rgb(Artestoa.vivid(paletteOf(stop))[0] || paletteOf(stop)[0]);
+            const [r, g, b] = Fasarte.rgb(Fasarte.vivid(paletteOf(stop))[0] || paletteOf(stop)[0]);
             el.style.setProperty('--lit', `rgba(${r},${g},${b},.45)`);
             el.classList.add('lit');
             // Repainted only when focus changes, after a short pause, so moving briskly past
@@ -894,7 +896,7 @@
             if (on === exploring || mode !== '3d') return;
             exploring = on;
             root.classList.toggle('exploring', on);
-            try { sessionStorage.setItem('artestoa:hall-mode', on ? 'explore' : 'walk'); } catch {}
+            try { sessionStorage.setItem('fasarte:hall-mode', on ? 'explore' : 'walk'); } catch {}
             $('mode-toggle').setAttribute('aria-pressed', String(on));
             $('mode-icon').textContent = on ? 'swipe_vertical' : '360';
             $('mode-label').textContent = on ? 'Scroll mode' : 'Free look';
@@ -1195,15 +1197,15 @@
                     `data-goto-wing="${w.id}"`)).join(''));
             }
             openSheet('Saved works', '');
-            const works = await Artestoa.savedWorks();
+            const works = await Fasarte.savedWorks();
             sheetList.innerHTML = works.length
-                ? works.map((w) => row(Artestoa.workUrl(w), `<img src="${w.images[0].sm}" alt="" class="w-14 h-[72px] object-cover rounded-md shadow" loading="lazy"/>`,
-                    escapeHtml(w.title), `${escapeHtml(Artestoa.registryEntry(w.artist)?.name || '')} · ${escapeHtml(w.type)}`)).join('')
+                ? works.map((w) => row(Fasarte.workUrl(w), `<img src="${w.images[0].sm}" alt="" class="w-14 h-[72px] object-cover rounded-md shadow" loading="lazy"/>`,
+                    escapeHtml(w.title), `${escapeHtml(Fasarte.registryEntry(w.artist)?.name || '')} · ${escapeHtml(w.type)}`)).join('')
                 : `<li class="px-3 py-10 text-center text-sm opacity-70">Nothing saved yet. Step into a gallery and tap the heart on any piece.</li>`;
         }));
 
         function syncSaved() {
-            const n = Artestoa.readSaved().length;
+            const n = Fasarte.readSaved().length;
             $('saved-count').textContent = n;
             $('saved-count').classList.toggle('hidden', n === 0);
         }
@@ -1217,7 +1219,7 @@
         // Arriving at index.html#portal-<slug> (back from a gallery): stand in front of that
         // frame, in whichever mode the visitor was using
         let wasExploring = false;
-        try { wasExploring = sessionStorage.getItem('artestoa:hall-mode') === 'explore'; } catch {}
+        try { wasExploring = sessionStorage.getItem('fasarte:hall-mode') === 'explore'; } catch {}
         function arrive() {
             if (location.hash === '#exhibit') return $('exhibit').scrollIntoView();
             const stop = portals.find((p) => `#${p.id}` === location.hash);

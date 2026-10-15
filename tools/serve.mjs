@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /*
- * Artestoa dev server: a static file server with the same address rules as _redirects,
+ * Fasarte dev server: a static file server with the same address rules as _redirects,
  * so clean URLs work locally:
  *
  *   /                    index.html    (the hall)
  *   /orneril             gallery.html  (a maker's gallery)
  *   /orneril/lumera      work.html     (one work)
  *
- * Real files always win, so /core/artestoa.js and /artists/... are served as they are.
+ * Real files always win, so /core/fasarte.js and /artists/... are served as they are.
  * To try a maker on their own host, open http://orneril.localhost:8080 and set
  * `domain: "localhost"` in artists/registry.js (subdomains of localhost resolve to it).
  *
@@ -80,5 +80,5 @@ createServer(async (req, res) => {
         res.end();
     }
 }).listen(PORT, "127.0.0.1", () => {
-    console.log(`Artestoa on http://localhost:${PORT}`);
+    console.log(`Fasarte on http://localhost:${PORT}`);
 });

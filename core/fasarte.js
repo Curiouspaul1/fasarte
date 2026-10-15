@@ -1,10 +1,10 @@
 /*
- * Artestoa core: everything the hall, galleries and work pages share.
+ * Fasarte core: everything the hall, galleries and work pages share.
  *
  *  - Routing: which maker and work a page is showing, read from the address:
- *        artestoa.com/orneril            a gallery
- *        artestoa.com/orneril/lumera     a work
- *        orneril.artestoa.com/lumera     the same, once subdomains are switched on
+ *        fasarte.com/orneril            a gallery
+ *        fasarte.com/orneril/lumera     a work
+ *        orneril.fasarte.com/lumera     the same, once subdomains are switched on
  *        orneril.com/lumera              a maker with a domain of their own ("detached")
  *        gallery.html?a=orneril          the plain-file fallback (tidied into the forms above)
  *  - Loading an artist's catalogue (artists/<slug>/catalogue.js). Only slugs listed in
@@ -18,7 +18,7 @@
  * root-absolute ("/artists/…"), so the site must be served from the root of its domain
  * (tools/serve.mjs locally; see _redirects for hosting).
  */
-const Artestoa = (() => {
+const Fasarte = (() => {
     const catalogues = {};
     const loading = {};
 
@@ -46,7 +46,7 @@ const Artestoa = (() => {
         loading[slug]?.resolve(catalogues[slug]);
     }
 
-    const registryEntry = (slug) => artestoa.artists.find((a) => a.slug === slug);
+    const registryEntry = (slug) => fasarte.artists.find((a) => a.slug === slug);
 
     function loadCatalogue(slug) {
         if (!registryEntry(slug)) return Promise.reject(new Error(`No artist "${slug}" in the registry`));
@@ -71,8 +71,8 @@ const Artestoa = (() => {
         const host = location.hostname.replace(/^www\./, "");
         const query = new URLSearchParams(location.search);
         const parts = location.pathname.split("/").filter((p) => p && !p.endsWith(".html"));
-        const own = artestoa.artists.find((a) => a.domain && a.domain.replace(/^www\./, "") === host);
-        const hall = artestoa.domain;
+        const own = fasarte.artists.find((a) => a.domain && a.domain.replace(/^www\./, "") === host);
+        const hall = fasarte.domain;
         const sub = hall && host.endsWith(`.${hall}`) ? host.slice(0, -hall.length - 1) : null;
         const hostSlug = own?.slug || (sub && registryEntry(sub) ? sub : null);
         if (hostSlug) return { slug: hostSlug, work: parts[0] || query.get("id"), onHost: true };
@@ -102,7 +102,7 @@ const Artestoa = (() => {
 
     // On a maker's own host, their pages are local ("/", "/lumera") and everything else
     // lives on the hall's origin. Elsewhere, everything is a path on this origin.
-    const hallOrigin = () => (here.onHost ? `https://${artestoa.domain}` : "");
+    const hallOrigin = () => (here.onHost ? `https://${fasarte.domain}` : "");
     const hallUrl = (slug) => `${hallOrigin()}/${slug ? `#portal-${slug}` : ""}`;
     function galleryUrl(slug, hash) {
         const h = hash ? `#${hash}` : "";
@@ -120,11 +120,17 @@ const Artestoa = (() => {
 
     // ---------- Saved works ----------
 
-    const SAVED_KEY = "artestoa:saved";
+    const SAVED_KEY = "fasarte:saved";
     const LEGACY_KEY = "orneril:favourites"; // from before Orneril joined the hall
+    const RENAMED_KEY = "artestoa:saved";     // from before the hall was renamed Fasarte
 
     function readSaved() {
         try {
+            const renamed = localStorage.getItem(RENAMED_KEY);
+            if (renamed !== null) {
+                if (localStorage.getItem(SAVED_KEY) === null) localStorage.setItem(SAVED_KEY, renamed);
+                localStorage.removeItem(RENAMED_KEY);
+            }
             const legacy = JSON.parse(localStorage.getItem(LEGACY_KEY));
             if (Array.isArray(legacy)) {
                 const merged = [...new Set([...(JSON.parse(localStorage.getItem(SAVED_KEY)) || []), ...legacy.map((id) => `orneril/${id}`)])];

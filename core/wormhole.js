@@ -1,7 +1,7 @@
 /*
- * Artestoa wormhole: the passage between the hall and a maker's gallery.
+ * Fasarte wormhole: the passage between the hall and a maker's gallery.
  *
- * Self-contained (needs nothing else from Artestoa), so a gallery can start the far end
+ * Self-contained (needs nothing else from Fasarte), so a gallery can start the far end
  * of the passage before the rest of its page has loaded.
  *
  *   Wormhole.run({ palette, direction, duration }) -> Promise

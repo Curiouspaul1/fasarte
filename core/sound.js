@@ -1,5 +1,5 @@
 /*
- * Artestoa sound: background music and the passage through a portal.
+ * Fasarte sound: background music and the passage through a portal.
  *
  * Everything is synthesised with the Web Audio API, so there are no audio files to
  * download and nothing to license.
@@ -15,11 +15,19 @@
  * up from the bar it had reached on the previous page.
  */
 const Sound = (() => {
-    const PREF_KEY = "artestoa:sound";       // "off" once the visitor mutes
-    const POS_KEY = "artestoa:music-bar";     // bar to resume from on the next page
+    const PREF_KEY = "fasarte:sound";       // "off" once the visitor mutes
+    const POS_KEY = "fasarte:music-bar";     // bar to resume from on the next page
 
     let enabled = true;
-    try { enabled = localStorage.getItem(PREF_KEY) !== "off"; } catch {}
+    try {
+        // Carry the setting over from before the hall was renamed Fasarte
+        const old = localStorage.getItem("artestoa:sound");
+        if (old !== null) {
+            if (localStorage.getItem(PREF_KEY) === null) localStorage.setItem(PREF_KEY, old);
+            localStorage.removeItem("artestoa:sound");
+        }
+        enabled = localStorage.getItem(PREF_KEY) !== "off";
+    } catch {}
 
     let ctx = null, master, musicBus, sfxBus, noise;
     const buttons = new Set();

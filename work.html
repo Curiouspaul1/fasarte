@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Artestoa</title>
+    <title>Fasarte</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -54,7 +54,7 @@
                 radial-gradient(55% 45% at 50% 38%, rgba(255, 244, 220, .10), transparent 70%),
                 #0e0e0d;
         }
-        /* Coloured light in the work's bead palette (glowFor in core/artestoa.js) */
+        /* Coloured light in the work's bead palette (glowFor in core/fasarte.js) */
         #stage-blur {
             position: absolute; inset: 0;
             opacity: .55;
@@ -277,22 +277,22 @@
     <div id="toast" role="status" class="fixed left-1/2 -translate-x-1/2 bottom-28 lg:bottom-10 z-50 bg-gray-900 text-white dark:bg-white dark:text-gray-900 text-sm px-5 py-2.5 rounded-full shadow-xl"></div>
 
     <script src="/artists/registry.js"></script>
-<script src="/core/artestoa.js"></script>
+<script src="/core/fasarte.js"></script>
 <script src="/core/sound.js"></script>
 <script>
 // /<maker>/<work>[?tour=1] (or work.html?a=<maker>&id=<work> as a fallback)
 document.getElementById('sound-slot').append(Sound.button('w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white transition-transform hover:scale-105 active:scale-95'));
 
-Artestoa.currentCatalogue().then((catalogue) => {
+Fasarte.currentCatalogue().then((catalogue) => {
     const myGalleryData = catalogue.works;
     const galleryRooms = catalogue.rooms;
-    const { glowFor } = Artestoa;
-    Artestoa.applyTheme(catalogue.theme);
+    const { glowFor } = Fasarte;
+    Fasarte.applyTheme(catalogue.theme);
 
     // --- 1. WHICH WORK? ---
     const params = new URLSearchParams(window.location.search);
     const touring = params.get('tour') === '1';
-    const work = catalogue.find(Artestoa.route().work) || myGalleryData[0];
+    const work = catalogue.find(Fasarte.route().work) || myGalleryData[0];
     const room = galleryRooms.find((r) => r.id === work.room);
 
     // Walking order: the guided tour covers the titled works; free browsing covers everything
@@ -301,15 +301,15 @@ Artestoa.currentCatalogue().then((catalogue) => {
     const pos = Math.max(0, route.indexOf(work));
     const prevWork = route[pos - 1];
     const nextWork = route[pos + 1];
-    const linkTo = (w) => Artestoa.workUrl(w, touring ? { tour: 1 } : {});
-    const galleryUrl = Artestoa.galleryUrl(catalogue.slug, `w-${work.id}`);
+    const linkTo = (w) => Fasarte.workUrl(w, touring ? { tour: 1 } : {});
+    const galleryUrl = Fasarte.galleryUrl(catalogue.slug, `w-${work.id}`);
 
     // --- 2. PLACARD ---
-    document.title = `${work.title} · ${catalogue.gallery.title} | Artestoa`;
+    document.title = `${work.title} · ${catalogue.gallery.title} | Fasarte`;
     const $ = (id) => document.getElementById(id);
 
     $('room-link').textContent = `Room ${room.numeral} · ${room.title}`;
-    $('room-link').href = Artestoa.galleryUrl(catalogue.slug, `room-${room.id}`);
+    $('room-link').href = Fasarte.galleryUrl(catalogue.slug, `room-${room.id}`);
     $('craft-title').textContent = work.title;
     if (work.series) {
         $('craft-series').textContent = `From the series ${work.series}`;
@@ -317,7 +317,7 @@ Artestoa.currentCatalogue().then((catalogue) => {
     }
     $('craft-type').textContent = work.type;
     $('craft-artist').textContent = `Handmade by ${catalogue.artist.name || `${catalogue.gallery.title} Studio`}`;
-    $('craft-artist').href = Artestoa.galleryUrl(catalogue.slug, 'room-artist');
+    $('craft-artist').href = Fasarte.galleryUrl(catalogue.slug, 'room-artist');
     $('craft-description').textContent = work.description;
     $('spec-year').textContent = work.year || 'Undated';
     $('spec-no').textContent = `No. ${work.no}`;
@@ -340,7 +340,7 @@ Artestoa.currentCatalogue().then((catalogue) => {
     }
 
     // Next / previous
-    const endHref = touring ? galleryUrl : Artestoa.galleryUrl(catalogue.slug, 'about');
+    const endHref = touring ? galleryUrl : Fasarte.galleryUrl(catalogue.slug, 'about');
     $('next-card').href = nextWork ? linkTo(nextWork) : endHref;
     $('next-thumb').src = (nextWork || work).images[0].sm;
     $('next-kicker').textContent = nextWork ? (touring ? `Next stop · ${pos + 2} of ${route.length}` : 'Next in the gallery') : 'You have reached the end';
@@ -502,7 +502,7 @@ Artestoa.currentCatalogue().then((catalogue) => {
     const favBtn = $('fav-btn');
 
     function renderFav() {
-        const saved = Artestoa.isSaved(work);
+        const saved = Fasarte.isSaved(work);
         favBtn.setAttribute('aria-pressed', String(saved));
         favBtn.setAttribute('aria-label', saved ? 'Remove from saved works' : 'Save this work');
         const icon = favBtn.querySelector('span');
@@ -510,15 +510,15 @@ Artestoa.currentCatalogue().then((catalogue) => {
         icon.classList.toggle('text-[#ff6b81]', saved);
     }
     favBtn.addEventListener('click', () => {
-        const saved = Artestoa.toggleSaved(work);
+        const saved = Fasarte.toggleSaved(work);
         renderFav();
         toast(saved ? 'Saved. Find it under the heart, anywhere in the hall' : 'Removed from your saved works');
     });
     renderFav();
 
     $('share-btn').addEventListener('click', async () => {
-        const url = new URL(Artestoa.workUrl(work), location.href).href;
-        const data = { title: `${work.title} | Artestoa`, text: `${work.title}, from ${catalogue.gallery.title} at Artestoa`, url };
+        const url = new URL(Fasarte.workUrl(work), location.href).href;
+        const data = { title: `${work.title} | Fasarte`, text: `${work.title}, from ${catalogue.gallery.title} at Fasarte`, url };
         if (navigator.share) {
             try { await navigator.share(data); } catch {}
             return;

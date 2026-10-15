@@ -1,8 +1,8 @@
 /*
- * Orneril: exhibition catalogue (an Artestoa gallery).
+ * Orneril: exhibition catalogue (an Fasarte gallery).
  *
  * This file is also the template for adding a maker. It registers itself with
- * Artestoa.registerCatalogue(slug, { gallery, theme, artist, rooms, works }).
+ * Fasarte.registerCatalogue(slug, { gallery, theme, artist, rooms, works }).
  *
  * Each "work" is one piece (or one matched set). `images[0]` is the hero shot;
  * every image has a full-size `src` (~1800px) and a grid thumbnail `sm` (~720px),
@@ -375,7 +375,7 @@ const artist = {
     materials: ["crackle glass", "hematite", "howlite", "onyx", "jasper", "lava stone", "cowrie", "wood", "polymer clay", "acrylic", "glass pearls", "turquoise"],
 };
 
-Artestoa.registerCatalogue("orneril", {
+Fasarte.registerCatalogue("orneril", {
     gallery: {
         title: "Orneril",
         kicker: "A Digital Exhibition • Handcrafted Beadwork",

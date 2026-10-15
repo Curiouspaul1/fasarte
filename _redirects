@@ -1,4 +1,4 @@
-# Artestoa address rules (Netlify; also read by tools/serve.mjs's equivalent rules).
+# Fasarte address rules (Netlify; also read by tools/serve.mjs's equivalent rules).
 # Existing files are served first, so /core/... and /artists/... are unaffected.
 # A 200 is a rewrite: the visitor keeps the clean address.
 

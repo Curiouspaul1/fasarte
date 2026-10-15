@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Artestoa</title>
-    <meta name="description" content="A maker's gallery in Artestoa, a hall of handcraft."/>
+    <title>Fasarte</title>
+    <meta name="description" content="A maker's gallery in Fasarte, a hall of handcraft."/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -285,7 +285,7 @@
 
         /* ---------- Ambient light ----------
            Two stacked layers crossfade. Each is painted with soft radial gradients in the
-           work's colours (glowFor in core/artestoa.js), so no CSS blur is ever computed. */
+           work's colours (glowFor in core/fasarte.js), so no CSS blur is ever computed. */
         .ambient-layer {
             position: absolute;
             inset: 0;
@@ -322,10 +322,10 @@
 
         // Arriving through a portal: hold the page back (before its first paint) for the wormhole
         try {
-            const arrival = JSON.parse(sessionStorage.getItem('artestoa:arrival'));
-            sessionStorage.removeItem('artestoa:arrival');
+            const arrival = JSON.parse(sessionStorage.getItem('fasarte:arrival'));
+            sessionStorage.removeItem('fasarte:arrival');
             if (arrival?.palette && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                window.artestoaArrival = arrival;
+                window.fasarteArrival = arrival;
                 document.documentElement.classList.add('arriving');
             }
         } catch {}
@@ -345,7 +345,7 @@
     <script src="/core/wormhole.js"></script>
     <script src="/core/sound.js"></script>
     <script>
-        if (window.artestoaArrival) {
+        if (window.fasarteArrival) {
             const root = document.documentElement;
             const land = () => {
                 if (!root.classList.contains('arriving')) return;
@@ -353,7 +353,7 @@
                 root.classList.remove('arriving');
                 setTimeout(() => root.classList.remove('landing'), 1500);
             };
-            Wormhole.run({ palette: window.artestoaArrival.palette, direction: 'out', duration: 1150, onReveal: land });
+            Wormhole.run({ palette: window.fasarteArrival.palette, direction: 'out', duration: 1150, onReveal: land });
             // The far end of the portal's sound, where the browser allows sound without a new click
             if (navigator.getAutoplayPolicy?.('audiocontext') === 'allowed') Sound.start().then(() => Sound.arrive());
             // Never leave the page hidden, even if animation frames are held back
@@ -367,7 +367,7 @@
 
     <a id="hall-crumb" href="/" class="absolute top-5 left-5 md:top-6 md:left-8 z-30 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors">
         <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-        <span><span class="font-display normal-case italic tracking-normal text-[15px]">arte·stoa</span><span id="wing-crumb" class="hidden sm:inline"></span></span>
+        <span><span class="font-display normal-case italic tracking-normal text-[15px]">fas·arte</span><span id="wing-crumb" class="hidden sm:inline"></span></span>
     </a>
 
     <header class="pt-20 md:pt-24 pb-8 px-6 text-center">
@@ -521,7 +521,7 @@
     </div>
 
     <script src="/artists/registry.js"></script>
-    <script src="/core/artestoa.js"></script>
+    <script src="/core/fasarte.js"></script>
     <script>
         // Coming back from a work: let the browser morph its image back into its frame
         window.addEventListener('pagereveal', (e) => {
@@ -535,44 +535,44 @@
         // This page shows one maker's gallery: gallery.html?a=<slug>
         document.getElementById('sound-slot').append(Sound.button('w-10 h-10 rounded-full flex items-center justify-center text-text-secondary-light dark:text-text-secondary-dark hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors'));
 
-        Artestoa.currentCatalogue().then((catalogue) => {
+        Fasarte.currentCatalogue().then((catalogue) => {
 
             const myGalleryData = catalogue.works;
             const galleryRooms = catalogue.rooms;
             const findWork = catalogue.find;
             const artist = catalogue.artist;
-            const { glowFor, escapeHtml } = Artestoa;
-            const detailUrl = Artestoa.workUrl;
+            const { glowFor, escapeHtml } = Fasarte;
+            const detailUrl = Fasarte.workUrl;
             const roomOf = (work) => galleryRooms.find((r) => r.id === work.room);
             const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
             // --- The gallery's own words, colours and place in the hall ---
             const gallery = catalogue.gallery;
-            Artestoa.applyTheme(catalogue.theme);
-            document.title = `${gallery.title} | Artestoa`;
+            Fasarte.applyTheme(catalogue.theme);
+            document.title = `${gallery.title} | Fasarte`;
             document.getElementById('gallery-kicker').textContent = gallery.kicker;
             document.getElementById('gallery-title').textContent = gallery.title;
             document.getElementById('gallery-intro').textContent = gallery.intro;
             document.getElementById('gallery-exit').textContent = gallery.exit;
 
-            const wing = artestoa.wings.find((w) => w.id === catalogue.entry.wing);
-            document.getElementById('hall-crumb').href = Artestoa.hallUrl(catalogue.slug);
-            document.getElementById('exit-hall').href = Artestoa.hallUrl(catalogue.slug);
+            const wing = fasarte.wings.find((w) => w.id === catalogue.entry.wing);
+            document.getElementById('hall-crumb').href = Fasarte.hallUrl(catalogue.slug);
+            document.getElementById('exit-hall').href = Fasarte.hallUrl(catalogue.slug);
             if (wing) document.getElementById('wing-crumb').textContent = ` › ${wing.title} wing`;
             // "Next door" is the next maker along the hall, or the first open wall after this one
-            const neighbours = artestoa.artists;
+            const neighbours = fasarte.artists;
             const nextDoor = neighbours[neighbours.indexOf(catalogue.entry) + 1];
             const exitNext = document.getElementById('exit-next');
             if (nextDoor) {
-                exitNext.href = Artestoa.galleryUrl(nextDoor.slug);
+                exitNext.href = Fasarte.galleryUrl(nextDoor.slug);
                 exitNext.textContent = `Next door: ${nextDoor.name} →`;
             } else {
-                exitNext.href = `${Artestoa.hallUrl()}#exhibit`;
+                exitNext.href = `${Fasarte.hallUrl()}#exhibit`;
                 exitNext.textContent = 'Next door: an empty wall. Exhibit here →';
             }
 
             // A detached gallery stands on its own, with no way back into the hall
-            if (Artestoa.isDetached(catalogue.slug)) {
+            if (Fasarte.isDetached(catalogue.slug)) {
                 ['hall-crumb', 'exit-hall', 'exit-next'].forEach((id) => document.getElementById(id).remove());
             }
 
@@ -996,7 +996,7 @@
             // ============ 3. FAVOURITES ============
             // Saved works span every gallery in the hall ("artist/work" keys)
             function syncFavourites() {
-                const favs = Artestoa.readSaved();
+                const favs = Fasarte.readSaved();
                 document.querySelectorAll('.work[data-id]').forEach((el) => el.classList.toggle('is-fav', favs.includes(`${catalogue.slug}/${el.dataset.id}`)));
                 const badge = document.getElementById('saved-count');
                 badge.textContent = favs.length;
@@ -1025,7 +1025,7 @@
                         <span class="flex-1 min-w-0">
                             <span class="block font-display text-lg italic truncate">${escapeHtml(work.title)}</span>
                             <span class="block text-[10px] uppercase tracking-[0.18em] text-text-secondary-light dark:text-text-secondary-dark">
-                                ${work.artist === catalogue.slug ? `Room ${roomOf(work).numeral}` : escapeHtml(Artestoa.registryEntry(work.artist)?.name || '')} · ${escapeHtml(work.type)}${work.year ? ` · ${work.year}` : ''}
+                                ${work.artist === catalogue.slug ? `Room ${roomOf(work).numeral}` : escapeHtml(Fasarte.registryEntry(work.artist)?.name || '')} · ${escapeHtml(work.type)}${work.year ? ` · ${work.year}` : ''}
                             </span>
                         </span>
                         <span class="material-symbols-outlined text-text-secondary-light dark:text-text-secondary-dark">arrow_forward</span>
@@ -1056,7 +1056,7 @@
                     sheetList.innerHTML = '';
                     sheet.querySelector('[data-close]:not(.absolute)').focus();
                     // Saved works from every gallery in the hall
-                    Artestoa.savedWorks().then((favs) => {
+                    Fasarte.savedWorks().then((favs) => {
                         if (sheet.hidden || searchWrap.hidden === false) return;
                         sheetList.innerHTML = favs.length ? favs.map(listItem).join('') : emptyItem('Nothing saved yet. Open any piece and tap the heart to keep it here.');
                     });
