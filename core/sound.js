@@ -1,12 +1,11 @@
 /*
- * Artestoa sound: background music, footsteps and the passage through a portal.
+ * Artestoa sound: background music and the passage through a portal.
  *
  * Everything is synthesised with the Web Audio API, so there are no audio files to
  * download and nothing to license.
  *
  *   Music:  J. S. Bach, Prelude in C major, BWV 846 (1722, public domain), played softly
  *           on a piano-like voice through a small reverb, looping.
- *   Steps:  soft heel-and-toe taps on a stone floor, alternating left and right.
  *   Portal: a rising shimmer and rush of air, ending in a low bloom at the threshold;
  *           `arrive` is the gentler far end, played as a gallery opens.
  *
@@ -63,7 +62,7 @@ const Sound = (() => {
         sfxBus.connect(master);
         sfxBus.connect(reverb);
 
-        // Half a second of white noise, reused by the steps and the portal
+        // Half a second of white noise, for the portal's rush of air
         noise = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.5), ctx.sampleRate);
         const nd = noise.getChannelData(0);
         for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
@@ -196,48 +195,6 @@ const Sound = (() => {
         };
     })();
 
-    // ---------- Footsteps ----------
-
-    let lastStep = 0, foot = 1;
-    function step({ minGap = 0.26, level = 1 } = {}) {
-        if (!running()) return;
-        const now = ctx.currentTime;
-        if (now - lastStep < minGap) return;
-        lastStep = now;
-        foot = -foot;
-        const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-        if (pan) { pan.pan.value = 0.22 * foot; pan.connect(sfxBus); }
-        const out = pan || sfxBus;
-
-        // Heel: a soft low thump
-        const heel = ctx.createOscillator();
-        heel.frequency.setValueAtTime(95 + Math.random() * 20, now);
-        heel.frequency.exponentialRampToValueAtTime(48, now + 0.09);
-        const hg = ctx.createGain();
-        hg.gain.setValueAtTime(0.0001, now);
-        hg.gain.exponentialRampToValueAtTime(0.32 * level, now + 0.005);
-        hg.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
-        heel.connect(hg).connect(out);
-        heel.start(now);
-        heel.stop(now + 0.13);
-
-        // Sole: a short gritty scuff on stone, just after the heel
-        const t2 = now + 0.035;
-        const src = ctx.createBufferSource();
-        src.buffer = noise;
-        src.playbackRate.value = 0.8 + Math.random() * 0.4;
-        const bp = ctx.createBiquadFilter();
-        bp.type = "bandpass";
-        bp.frequency.value = 900 + Math.random() * 600;
-        bp.Q.value = 0.9;
-        const sg = ctx.createGain();
-        sg.gain.setValueAtTime(0.0001, t2);
-        sg.gain.exponentialRampToValueAtTime(0.16 * level, t2 + 0.01);
-        sg.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.09);
-        src.connect(bp).connect(sg).connect(out);
-        src.start(t2, Math.random() * 0.3, 0.12);
-    }
-
     // ---------- The portal ----------
 
     // Hall side: air rushes and a shimmer rises over `seconds`, then a low bloom
@@ -365,7 +322,7 @@ const Sound = (() => {
         return b;
     }
 
-    // Steps and the pulse on the button need a little CSS, shared by every page
+    // The pulse on the button needs a little CSS, shared by every page
     const style = document.createElement("style");
     style.textContent = `
         [data-sound-toggle] { position: relative; }
@@ -380,7 +337,7 @@ const Sound = (() => {
     document.head.appendChild(style);
 
     return {
-        start, step, portal, arrive, button,
+        start, portal, arrive, button,
         isOn: running,
         onChange: (fn) => listeners.add(fn),
     };

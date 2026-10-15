@@ -617,9 +617,6 @@
         const cam = { x: 0, y: 0, z: PERSPECTIVE, yaw: 0, pitch: 0 };
         const goal = { ...cam };
         let pushTarget = null;           // set while pushing into a frame on the way through
-        // Footsteps: one per stride of distance actually walked (scroll or free look)
-        const STRIDE = 170;
-        let lastStride = 0, strideAcc = 0;
 
         function build3d() {
             const H = innerHeight;
@@ -746,7 +743,6 @@
             const kPos = 1 - Math.exp(-dt / (pushTarget ? 200 : exploring ? 260 : 120));
             const kAng = 1 - Math.exp(-dt / (exploring ? 90 : 180));
             let moving = holding;
-            const before = [cam.x, cam.z];
             for (const key of ['x', 'y', 'z', 'yaw', 'pitch']) {
                 const k = key === 'yaw' || key === 'pitch' ? kAng : kPos;
                 const diff = target[key] - cam[key];
@@ -756,8 +752,6 @@
             applyCamera();
             if (exploring) {
                 updateExploreFocus();
-                strideAcc += Math.hypot(cam.x - before[0], cam.z - before[1]);
-                if (strideAcc > STRIDE && !pushTarget) { strideAcc = 0; Sound.step(); }
             }
             raf = moving ? requestAnimationFrame(loop) : 0;
             if (!moving) last = 0;
@@ -779,7 +773,6 @@
             cam.z = goal.z;
             applyCamera();
             kick();
-            if (Math.abs(t - lastStride) > STRIDE) { lastStride = t; Sound.step(); }
 
             // Hero hangs at the far end on arrival, then gives way as you walk
             const heroO = Math.max(0, 1 - t / 380);
