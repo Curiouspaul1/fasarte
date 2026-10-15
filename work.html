@@ -170,6 +170,7 @@
         </a>
         <p id="tour-label" class="hidden text-white/80 text-[10px] uppercase tracking-[0.3em] bg-black/30 backdrop-blur-md px-4 py-2 rounded-full"></p>
         <div class="flex gap-3 pointer-events-auto">
+            <span id="sound-slot" class="flex"></span>
             <button id="share-btn" aria-label="Share this work" class="w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white transition-transform hover:scale-105 active:scale-95">
                 <span class="material-symbols-outlined text-[20px]">ios_share</span>
             </button>
@@ -277,8 +278,11 @@
 
     <script src="/artists/registry.js"></script>
 <script src="/core/artestoa.js"></script>
+<script src="/core/sound.js"></script>
 <script>
 // /<maker>/<work>[?tour=1] (or work.html?a=<maker>&id=<work> as a fallback)
+document.getElementById('sound-slot').append(Sound.button('w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white transition-transform hover:scale-105 active:scale-95'));
+
 Artestoa.currentCatalogue().then((catalogue) => {
     const myGalleryData = catalogue.works;
     const galleryRooms = catalogue.rooms;

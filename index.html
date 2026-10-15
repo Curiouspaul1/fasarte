@@ -138,50 +138,118 @@
             text-align: center;
         }
 
-        /* ---------- Portals ---------- */
-        .portal { display: block; color: inherit; text-decoration: none; }
+        /* ---------- Portals ----------
+           Each frame is an arched niche: a gilded, bevelled frame around a dark liner, and the
+           artwork seen through the opening as if it lay some way beyond the wall. The frame in
+           focus gathers a slowly turning aura in its maker's colours (--c1..--c3). */
+        @property --spin { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+        .portal { display: block; color: inherit; text-decoration: none; --arch: 50% 50% 5px 5px / 34% 34% 5px 5px; }
         .portal .frame {
             position: relative;
-            background: var(--frame);
             padding: 9px;
-            box-shadow: 0 2px 4px rgba(0,0,0,.15), 0 30px 50px -24px rgba(0,0,0,.55);
-            transition: box-shadow .5s ease;
+            border-radius: var(--arch);
+            background:
+                linear-gradient(160deg, rgba(255,255,255,.35), transparent 30%, transparent 70%, rgba(0,0,0,.25)),
+                linear-gradient(110deg, #8a6127, #e8cb86 22%, #a87a34 40%, #f4e0a6 58%, #94692b 78%, #d9b56a);
+            box-shadow:
+                0 0 0 1px rgba(40, 25, 5, .55),
+                inset 0 1px 1px rgba(255, 245, 210, .7),
+                inset 0 -2px 3px rgba(60, 35, 5, .45),
+                0 2px 4px rgba(0,0,0,.2),
+                0 34px 50px -26px rgba(0,0,0,.65);
         }
-        .portal .mat { background: var(--mat); padding: 10%; }
-        .portal img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; }
+        /* The aura: a turning ring of the maker's colours, only on the frame in focus */
+        .portal .aura {
+            position: absolute; inset: -16px; z-index: -1;
+            border-radius: var(--arch);
+            background: conic-gradient(from var(--spin), var(--c1), var(--c2), var(--c3), var(--c1));
+            filter: blur(16px);
+            opacity: 0;
+            transition: opacity .9s ease;
+            pointer-events: none;
+        }
+        .portal.lit .aura { opacity: .9; animation: portalSpin 7s linear infinite; }
+        @keyframes portalSpin { to { --spin: 360deg; } }
+
+        .portal .mat {
+            padding: 5px;
+            border-radius: var(--arch);
+            background: #14100b;
+            box-shadow: inset 0 0 0 1px rgba(255, 230, 170, .18), inset 0 2px 6px rgba(0,0,0,.8);
+        }
+        .portal .window {
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--arch);
+            aspect-ratio: 3 / 4;
+            background: #0d0b09;
+            isolation: isolate;
+        }
+        .portal img { display: block; width: 100%; height: 100%; object-fit: cover; transform: scale(1.06); transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1); }
+        .portal.lit img { transform: scale(1.1); }
+        /* Depth: the opening falls into shadow at its edges, like looking through a doorway */
+        .portal .window::after {
+            content: ""; position: absolute; inset: 0; pointer-events: none;
+            background: radial-gradient(120% 90% at 50% 38%, transparent 52%, rgba(10, 6, 2, .55) 100%);
+            box-shadow: inset 0 10px 24px rgba(0,0,0,.45), inset 0 -6px 18px rgba(0,0,0,.35);
+        }
+        /* A soft sheen that drifts across the opening of the frame in focus */
+        .portal .window::before {
+            content: ""; position: absolute; inset: -20%; z-index: 1; pointer-events: none;
+            background: linear-gradient(115deg, transparent 42%, rgba(255, 250, 235, .22) 50%, transparent 58%);
+            transform: translateX(-60%);
+            opacity: 0;
+        }
+        .portal.lit .window::before { opacity: 1; animation: portalSheen 4.5s ease-in-out infinite; }
+        @keyframes portalSheen { 0% { transform: translateX(-60%); } 60%, 100% { transform: translateX(60%); } }
+
         .portal .plaque {
             margin: 14px auto 0;
             width: fit-content;
             max-width: 100%;
-            padding: 6px 14px;
-            background: linear-gradient(180deg, #d8b778, #a87c3c);
+            padding: 6px 16px;
+            background: linear-gradient(180deg, #e2c483, #b0843f 55%, #9a7032);
             color: #2a1d0b;
             border-radius: 2px;
-            box-shadow: 0 2px 6px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.4);
+            box-shadow: 0 0 0 1px rgba(60, 35, 5, .5), 0 3px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.5);
             text-align: center;
+            text-shadow: 0 1px 0 rgba(255, 240, 200, .45);
         }
-        .portal.lit .frame { box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 0 60px 6px var(--lit, rgba(255,240,200,.25)), 0 30px 50px -24px rgba(0,0,0,.55); }
+        .portal.lit .frame {
+            box-shadow:
+                0 0 0 1px rgba(40, 25, 5, .55),
+                inset 0 1px 1px rgba(255, 245, 210, .7),
+                inset 0 -2px 3px rgba(60, 35, 5, .45),
+                0 0 60px 4px var(--lit, rgba(255,240,200,.25)),
+                0 34px 50px -26px rgba(0,0,0,.65);
+        }
 
-        /* An open wall: an empty frame waiting for a maker */
-        .portal.open .mat {
-            aspect-ratio: 3 / 4;
-            padding: 0;
+        /* An open wall: a dormant portal in pewter, misty inside, waiting for a maker */
+        .portal.open .frame {
+            background:
+                linear-gradient(160deg, rgba(255,255,255,.35), transparent 30%, transparent 70%, rgba(0,0,0,.25)),
+                linear-gradient(110deg, #6d6a64, #d6d2c9 22%, #8b877f 40%, #ece8df 58%, #77736c 78%, #bdb8ae);
+        }
+        .portal.open .window {
             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
             background:
-                repeating-linear-gradient(45deg, rgba(0,0,0,.025) 0 2px, transparent 2px 7px),
-                var(--mat);
-            box-shadow: inset 0 0 0 10px var(--mat), inset 0 0 0 11px rgba(0,0,0,.14);
-            color: #6b6458;
+                radial-gradient(70% 50% at 50% 42%, rgba(255, 244, 220, .14), transparent 70%),
+                radial-gradient(120% 90% at 50% 100%, rgba(255, 244, 220, .06), transparent 60%),
+                #15120f;
+            color: #ddd5c6;
             text-align: center;
         }
         .portal.open .plus {
             width: 44px; height: 44px; border-radius: 999px;
-            border: 1px dashed rgba(0,0,0,.35);
+            border: 1px solid rgba(232, 203, 134, .7);
+            color: #e8cb86;
             display: flex; align-items: center; justify-content: center;
-            transition: transform .4s ease, background-color .4s ease;
+            box-shadow: 0 0 18px rgba(232, 203, 134, .25), inset 0 0 10px rgba(232, 203, 134, .15);
+            transition: transform .4s ease, box-shadow .4s ease;
         }
-        .portal.open:hover .plus { transform: scale(1.1); background: rgba(0,0,0,.05); }
-        .portal.open .plaque { background: linear-gradient(180deg, #cfc8ba, #a49c8c); }
+        .portal.open:hover .plus, .portal.open.lit .plus { transform: scale(1.08); box-shadow: 0 0 26px rgba(232, 203, 134, .45), inset 0 0 12px rgba(232, 203, 134, .25); }
+        .portal.open .plaque { background: linear-gradient(180deg, #d9d4ca, #a7a195 55%, #938d81); text-shadow: 0 1px 0 rgba(255,255,255,.4); }
+        @media (prefers-reduced-motion: reduce) { .portal.lit .aura, .portal.lit .window::before { animation: none; } }
 
         /* ---------- HUD over the hall ---------- */
         #hud { position: absolute; inset: 0; pointer-events: none; }
@@ -367,6 +435,8 @@
             <button data-dock="exhibit" aria-label="Exhibit your work" class="opacity-80 hover:text-primary hover:opacity-100 transition-colors">
                 <span class="material-symbols-outlined text-[22px]">add_circle</span>
             </button>
+            <div class="w-[1px] h-5 bg-black/15 dark:bg-white/15"></div>
+            <span id="sound-slot" class="flex"></span>
         </div>
     </footer>
 
@@ -387,10 +457,12 @@
     <script src="/artists/registry.js"></script>
     <script src="/core/artestoa.js"></script>
     <script src="/core/wormhole.js"></script>
+    <script src="/core/sound.js"></script>
     <script>
     (() => {
         const { escapeHtml, glowFor } = Artestoa;
         const $ = (id) => document.getElementById(id);
+        document.getElementById('sound-slot').append(Sound.button('rounded-full opacity-80 hover:text-primary hover:opacity-100 transition-colors'));
         const root = document.documentElement;
         const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
         const finePointer = matchMedia('(pointer: fine)').matches;
@@ -427,8 +499,8 @@
             if (stop.kind === 'maker') {
                 const a = stop.artist;
                 return `
-                    <a class="portal" id="frame-${stop.id}" href="${portalHref(stop)}" data-stop="${stops.indexOf(stop)}" aria-label="Enter ${escapeHtml(a.name)}'s gallery">
-                        <div class="frame"><div class="mat"><img src="${a.cover.src}" alt="${escapeHtml(a.cover.title)}, by ${escapeHtml(a.name)}" draggable="false"/></div></div>
+                    <a class="portal" id="frame-${stop.id}" href="${portalHref(stop)}" data-stop="${stops.indexOf(stop)}" style="${auraColours(stop)}" aria-label="Enter ${escapeHtml(a.name)}'s gallery">
+                        <div class="frame"><span class="aura" aria-hidden="true"></span><div class="mat"><div class="window"><img src="${a.cover.src}" alt="${escapeHtml(a.cover.title)}, by ${escapeHtml(a.name)}" draggable="false"/></div></div></div>
                         <div class="plaque">
                             <span class="block font-display italic text-[17px] leading-tight">${escapeHtml(a.name)}</span>
                             <span class="block text-[9px] uppercase tracking-[0.2em] mt-0.5 opacity-80">${escapeHtml(a.craft)}</span>
@@ -436,16 +508,22 @@
                     </a>`;
             }
             return `
-                <a class="portal open" id="frame-${stop.id}" href="#exhibit" data-stop="${stops.indexOf(stop)}" aria-label="An open wall in the ${escapeHtml(stop.wing.title)} wing: exhibit here">
-                    <div class="frame"><div class="mat">
+                <a class="portal open" id="frame-${stop.id}" href="#exhibit" data-stop="${stops.indexOf(stop)}" style="${auraColours(stop)}" aria-label="An open wall in the ${escapeHtml(stop.wing.title)} wing: exhibit here">
+                    <div class="frame"><span class="aura" aria-hidden="true"></span><div class="mat"><div class="window">
                         <span class="plus"><span class="material-symbols-outlined text-[22px]">add</span></span>
                         <span class="font-display italic text-[17px] leading-snug px-4">This wall is waiting</span>
                         <span class="text-[9px] uppercase tracking-[0.2em] opacity-70 px-4">Your ${escapeHtml(stop.wing.title.toLowerCase())} here</span>
-                    </div></div>
+                    </div></div></div>
                     <div class="plaque"><span class="block text-[9px] uppercase tracking-[0.2em]">Open wall · Exhibit here</span></div>
                 </a>`;
         }
         const paletteOf = (stop) => (stop.kind === 'maker' ? stop.artist.palette : NEUTRAL);
+        // The aura's three colours: the maker's vivid ones first (an open wall gets warm gilt)
+        function auraColours(stop) {
+            const pal = stop.kind === 'maker' ? stop.artist.palette : ['#e8cb86', '#f4e0a6', '#b08444'];
+            const lead = [...Artestoa.vivid(pal), ...pal];
+            return `--c1:${lead[0]};--c2:${lead[1] || lead[0]};--c3:${lead[2] || lead[0]}`;
+        }
 
         function describe(stop) {
             if (stop.kind === 'maker') {
@@ -491,6 +569,7 @@
             entering = true;
             try { sessionStorage.setItem('artestoa:arrival', JSON.stringify({ palette: stop.artist.palette })); } catch {}
             if (reduceMotion) { location.href = portalHref(stop); return; }
+            Sound.portal(mode === '3d' ? 1.8 : 1.25);
             if (mode === '3d') {
                 $('ring').classList.add('away');
                 pushInto(placedOf(stop));
@@ -538,6 +617,9 @@
         const cam = { x: 0, y: 0, z: PERSPECTIVE, yaw: 0, pitch: 0 };
         const goal = { ...cam };
         let pushTarget = null;           // set while pushing into a frame on the way through
+        // Footsteps: one per stride of distance actually walked (scroll or free look)
+        const STRIDE = 170;
+        let lastStride = 0, strideAcc = 0;
 
         function build3d() {
             const H = innerHeight;
@@ -664,6 +746,7 @@
             const kPos = 1 - Math.exp(-dt / (pushTarget ? 200 : exploring ? 260 : 120));
             const kAng = 1 - Math.exp(-dt / (exploring ? 90 : 180));
             let moving = holding;
+            const before = [cam.x, cam.z];
             for (const key of ['x', 'y', 'z', 'yaw', 'pitch']) {
                 const k = key === 'yaw' || key === 'pitch' ? kAng : kPos;
                 const diff = target[key] - cam[key];
@@ -671,7 +754,11 @@
                 else cam[key] = target[key];
             }
             applyCamera();
-            if (exploring) updateExploreFocus();
+            if (exploring) {
+                updateExploreFocus();
+                strideAcc += Math.hypot(cam.x - before[0], cam.z - before[1]);
+                if (strideAcc > STRIDE && !pushTarget) { strideAcc = 0; Sound.step(); }
+            }
             raf = moving ? requestAnimationFrame(loop) : 0;
             if (!moving) last = 0;
         }
@@ -692,6 +779,7 @@
             cam.z = goal.z;
             applyCamera();
             kick();
+            if (Math.abs(t - lastStride) > STRIDE) { lastStride = t; Sound.step(); }
 
             // Hero hangs at the far end on arrival, then gives way as you walk
             const heroO = Math.max(0, 1 - t / 380);

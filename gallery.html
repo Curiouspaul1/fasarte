@@ -343,6 +343,7 @@
     <!-- ===== Entrance ===== -->
     <!-- Stepping in from the hall: the far end of the wormhole, then the gallery eases in -->
     <script src="/core/wormhole.js"></script>
+    <script src="/core/sound.js"></script>
     <script>
         if (window.artestoaArrival) {
             const root = document.documentElement;
@@ -353,12 +354,17 @@
                 setTimeout(() => root.classList.remove('landing'), 1500);
             };
             Wormhole.run({ palette: window.artestoaArrival.palette, direction: 'out', duration: 1150, onReveal: land });
+            // The far end of the portal's sound, where the browser allows sound without a new click
+            if (navigator.getAutoplayPolicy?.('audiocontext') === 'allowed') Sound.start().then(() => Sound.arrive());
             // Never leave the page hidden, even if animation frames are held back
             setTimeout(() => { land(); Wormhole.clear(); }, 2500);
         }
     </script>
 
     <!-- The hall this gallery opens off -->
+    <!-- Sound on/off -->
+    <div id="sound-slot" class="absolute top-3 right-4 md:top-4 md:right-7 z-30"></div>
+
     <a id="hall-crumb" href="/" class="absolute top-5 left-5 md:top-6 md:left-8 z-30 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors">
         <span class="material-symbols-outlined text-[16px]">arrow_back</span>
         <span><span class="font-display normal-case italic tracking-normal text-[15px]">arte·stoa</span><span id="wing-crumb" class="hidden sm:inline"></span></span>
@@ -527,6 +533,8 @@
         });
 
         // This page shows one maker's gallery: gallery.html?a=<slug>
+        document.getElementById('sound-slot').append(Sound.button('w-10 h-10 rounded-full flex items-center justify-center text-text-secondary-light dark:text-text-secondary-dark hover:text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors'));
+
         Artestoa.currentCatalogue().then((catalogue) => {
 
             const myGalleryData = catalogue.works;
