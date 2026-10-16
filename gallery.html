@@ -850,7 +850,8 @@
                 q.textContent = `“${artist.quote}”`;
                 q.hidden = false;
             }
-            document.getElementById('artist-bio').innerHTML = artist.bio.map((p) => `<p>${escapeHtml(p)}</p>`).join('');
+            document.getElementById('artist-bio').innerHTML = artist.bio.map((p) => `<p>${escapeHtml(p)}</p>`).join('')
+                + (artist.signoff ? `<p class="font-display italic text-xl md:text-2xl leading-snug text-text-primary-light dark:text-text-primary-dark pt-2">${escapeHtml(artist.signoff)}</p>` : '');
 
             const years = myGalleryData.map((w) => w.year).filter(Boolean);
             document.getElementById('artist-facts').innerHTML = [

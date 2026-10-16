@@ -364,9 +364,13 @@ const artist = {
     portrait: "",             // e.g. "images/artist.jpg", relative to this folder (portrait orientation works best)
     quote: "",                // a line in the artist's own words
     bio: [
-        "Orneril began with a single strand and a habit of sorting beads by colour. Every piece since has been designed, strung and finished entirely by hand, one bead at a time.",
-        "The work moves between quiet and loud: earthy wood and stone necklaces, monochrome studies in onyx and howlite, and joyful, colour-saturated bracelets and lanyards. Each one starts from a palette, and most hide a small story in their charms: an anchor, a cowrie, a turtle, a cross.",
+        "Orneril began as a dream, a vision to create more than just jewelry, but stories you can wear.",
+        "We believe every piece holds a story, every detail carries a meaning, and every creation has the power to say what words cannot. More than adornments, our pieces are reflections of identity, expressions of individuality, and little fragments of the dreams that make us who we are.",
+        "Through our craft, we seek to bring these stories to life, shaping dreams into tangible expressions of individuality. Each creation is an invitation to express, to discover, and to leave a little of yourself in everything you wear.",
+        "At Orneril, we create not merely to be worn, but to be felt, remembered, and told. And as our story unfolds, we invite you to journey forth with us, to discover new expressions of yourself and witness the birth of new dreams, one piece of jewelry at a time.",
     ],
+    // A closing line, set apart beneath the bio
+    signoff: "This is Orneril. Where every piece tells a story, and every story becomes a part of you.",
     links: [
         // { label: "Instagram", href: "https://instagram.com/…" },
         // { label: "Email", href: "mailto:…" },
