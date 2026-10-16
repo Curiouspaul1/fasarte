@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Fasarte</title>
+    <title>Gallery</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -305,7 +305,9 @@ Fasarte.currentCatalogue().then((catalogue) => {
     const galleryUrl = Fasarte.galleryUrl(catalogue.slug, `w-${work.id}`);
 
     // --- 2. PLACARD ---
-    document.title = `${work.title} · ${catalogue.gallery.title} | Fasarte`;
+    // Mention the hall only to visitors who came through it (see cameThroughHall in core)
+    const inHall = Fasarte.cameThroughHall() && !Fasarte.isDetached(catalogue.slug);
+    document.title = `${work.title} · ${catalogue.gallery.title}${inHall ? ' | Fasarte' : ''}`;
     const $ = (id) => document.getElementById(id);
 
     $('room-link').textContent = `Room ${room.numeral} · ${room.title}`;
@@ -512,13 +514,15 @@ Fasarte.currentCatalogue().then((catalogue) => {
     favBtn.addEventListener('click', () => {
         const saved = Fasarte.toggleSaved(work);
         renderFav();
-        toast(saved ? 'Saved. Find it under the heart, anywhere in the hall' : 'Removed from your saved works');
+        toast(saved ? `Saved. Find it under the heart${inHall ? ', anywhere in the hall' : ' in the gallery'}` : 'Removed from your saved works');
     });
     renderFav();
 
     $('share-btn').addEventListener('click', async () => {
         const url = new URL(Fasarte.workUrl(work), location.href).href;
-        const data = { title: `${work.title} | Fasarte`, text: `${work.title}, from ${catalogue.gallery.title} at Fasarte`, url };
+        const data = inHall
+            ? { title: `${work.title} | Fasarte`, text: `${work.title}, from ${catalogue.gallery.title} at Fasarte`, url }
+            : { title: `${work.title} | ${catalogue.gallery.title}`, text: `${work.title}, from ${catalogue.gallery.title}`, url };
         if (navigator.share) {
             try { await navigator.share(data); } catch {}
             return;

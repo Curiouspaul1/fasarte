@@ -118,6 +118,14 @@ const Fasarte = (() => {
     // A detached gallery stands on its own: no way back into the hall
     const isDetached = (slug) => Boolean(registryEntry(slug)?.detached);
 
+    // Has the visitor come through the hall in this browsing session? The hall marks it when
+    // it loads. Galleries show their hall connections (breadcrumb, "back to the hall", "next
+    // door") only then; someone who opens a gallery directly gets it as a site of its own.
+    // sessionStorage is per tab and per domain, so on a maker's own domain this is always false.
+    const HALL_KEY = "fasarte:via-hall";
+    const markHallVisit = () => { try { sessionStorage.setItem(HALL_KEY, "1"); } catch {} };
+    const cameThroughHall = () => { try { return sessionStorage.getItem(HALL_KEY) === "1"; } catch { return false; } };
+
     // ---------- Saved works ----------
 
     const SAVED_KEY = "fasarte:saved";
@@ -195,7 +203,7 @@ const Fasarte = (() => {
 
     return {
         registerCatalogue, loadCatalogue, currentCatalogue, registryEntry, route,
-        hallUrl, galleryUrl, workUrl, isDetached,
+        hallUrl, galleryUrl, workUrl, isDetached, markHallVisit, cameThroughHall,
         readSaved, isSaved, toggleSaved, savedWorks,
         applyTheme, glowFor, vivid, rgb, escapeHtml,
     };

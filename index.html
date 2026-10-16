@@ -464,6 +464,8 @@
     (() => {
         const { escapeHtml, glowFor } = Fasarte;
         const $ = (id) => document.getElementById(id);
+        // Galleries opened from here (this tab, this visit) show their way back to the hall
+        Fasarte.markHallVisit();
         document.getElementById('sound-slot').append(Sound.button('rounded-full opacity-80 hover:text-primary hover:opacity-100 transition-colors'));
         const root = document.documentElement;
         const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;

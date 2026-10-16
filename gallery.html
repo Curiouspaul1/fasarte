@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Fasarte</title>
-    <meta name="description" content="A maker's gallery in Fasarte, a hall of handcraft."/>
+    <title>Gallery</title>
+    <meta name="description" content="A gallery of handcrafted work."/>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -479,6 +479,11 @@
             </a>
             <a id="exit-next" href="/" class="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium border border-black/15 dark:border-white/20 hover:border-primary hover:text-primary transition-colors"></a>
         </div>
+        <!-- Only for visitors who opened this gallery directly: the one mention of the hall -->
+        <a id="hall-footer" href="/" class="hidden mt-16 inline-flex items-center gap-1.5 text-xs text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors">
+            More makers at <span class="font-display italic text-sm">fas·arte</span>
+            <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+        </a>
     </section>
 
     <!-- ===== Dock ===== -->
@@ -549,7 +554,10 @@
             // --- The gallery's own words, colours and place in the hall ---
             const gallery = catalogue.gallery;
             Fasarte.applyTheme(catalogue.theme);
-            document.title = `${gallery.title} | Fasarte`;
+            // Visitors who came through the hall see its breadcrumb and exits; anyone who opened
+            // this gallery directly gets it as a site of its own, with one quiet footer link
+            const inHall = Fasarte.cameThroughHall() && !Fasarte.isDetached(catalogue.slug);
+            document.title = inHall ? `${gallery.title} | Fasarte` : gallery.title;
             document.getElementById('gallery-kicker').textContent = gallery.kicker;
             document.getElementById('gallery-title').textContent = gallery.title;
             document.getElementById('gallery-intro').textContent = gallery.intro;
@@ -571,9 +579,14 @@
                 exitNext.textContent = 'Next door: an empty wall. Exhibit here →';
             }
 
-            // A detached gallery stands on its own, with no way back into the hall
-            if (Fasarte.isDetached(catalogue.slug)) {
+            if (!inHall) {
                 ['hall-crumb', 'exit-hall', 'exit-next'].forEach((id) => document.getElementById(id).remove());
+                // ...apart from a detached gallery, which doesn't mention the hall at all
+                if (!Fasarte.isDetached(catalogue.slug)) {
+                    const more = document.getElementById('hall-footer');
+                    more.href = Fasarte.hallUrl();
+                    more.classList.remove('hidden');
+                }
             }
 
             // --- Entrance details ---
@@ -995,15 +1008,17 @@
             document.querySelectorAll('.room').forEach((room) => roomSpy.observe(room));
 
             // ============ 3. FAVOURITES ============
-            // Saved works span every gallery in the hall ("artist/work" keys)
+            // Saved works span every gallery in the hall ("artist/work" keys); a standalone visit
+            // only counts and lists this maker's
+            const ownSaved = (keys) => (inHall ? keys : keys.filter((k) => k.startsWith(`${catalogue.slug}/`)));
             function syncFavourites() {
-                const favs = Fasarte.readSaved();
+                const favs = ownSaved(Fasarte.readSaved());
                 document.querySelectorAll('.work[data-id]').forEach((el) => el.classList.toggle('is-fav', favs.includes(`${catalogue.slug}/${el.dataset.id}`)));
                 const badge = document.getElementById('saved-count');
                 badge.textContent = favs.length;
                 badge.classList.toggle('hidden', favs.length === 0);
                 document.getElementById('saved-summary').textContent = favs.length
-                    ? `You've saved ${favs.length} ${favs.length === 1 ? 'piece' : 'pieces'} across the hall. Find them under the heart in the dock.`
+                    ? `You've saved ${favs.length} ${favs.length === 1 ? 'piece' : 'pieces'}${inHall ? ' across the hall' : ''}. Find them under the heart in the dock.`
                     : 'Tap the heart on any piece to save it for later.';
             }
             syncFavourites();
@@ -1057,7 +1072,8 @@
                     sheetList.innerHTML = '';
                     sheet.querySelector('[data-close]:not(.absolute)').focus();
                     // Saved works from every gallery in the hall
-                    Fasarte.savedWorks().then((favs) => {
+                    Fasarte.savedWorks().then((all) => {
+                        const favs = inHall ? all : all.filter((w) => w.artist === catalogue.slug);
                         if (sheet.hidden || searchWrap.hidden === false) return;
                         sheetList.innerHTML = favs.length ? favs.map(listItem).join('') : emptyItem('Nothing saved yet. Open any piece and tap the heart to keep it here.');
                     });
